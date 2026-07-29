@@ -12,7 +12,10 @@ export function AuthProvider({ children }) {
     if (token) {
       api.get('/auth/me')
         .then((res) => setUser(res.data))
-        .catch(() => localStorage.removeItem('token'))
+        .catch(() => {
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+        })
         .finally(() => setLoading(false))
     } else {
       setLoading(false)
@@ -21,8 +24,8 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password })
-    localStorage.setItem('token', res.data.access_token)
     const me = await api.get('/auth/me')
+    localStorage.setItem('token', res.data.access_token)
     setUser(me.data)
     return me.data
   }

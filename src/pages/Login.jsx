@@ -7,17 +7,23 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
     try {
       await login(email, password)
       navigate('/')
-    } catch {
-      setError('Invalid credentials')
+    } catch (err) {
+      const msg = err?.response?.data?.detail || err?.message || 'Login failed'
+      setError(msg)
+      if (import.meta.env.DEV) console.error('Login error:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -35,8 +41,12 @@ export default function Login() {
           value={password} placeholder="Password"
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button className="w-full bg-gray-900 text-white p-2 rounded mt-4 hover:bg-gray-800">
-          Sign In
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-gray-900 text-white p-2 rounded mt-4 hover:bg-gray-800 disabled:opacity-50"
+        >
+          {loading ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
     </div>
