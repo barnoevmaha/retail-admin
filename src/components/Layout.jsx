@@ -21,6 +21,7 @@ import InventoryHistory from '../pages/InventoryHistory'
 import NotificationsPage from '../pages/NotificationsPage'
 import ReceiptsPage from '../pages/ReceiptsPage'
 import SettingsPage from '../pages/SettingsPage'
+import ChangePassword from '../pages/ChangePassword'
 import CompanyPage from '../pages/CompanyPage'
 import ImageGallery from '../pages/ImageGallery'
 
@@ -46,6 +47,7 @@ const nav = [
   { to: '/notifications', label: 'Notifications', icon: '🔔' },
   { to: '/receipts', label: 'Receipts', icon: '🧾' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
+  { to: '/settings/change-password', label: 'Change Password', icon: '🔑', indent: true },
   { to: '/company', label: 'Company', icon: '🏢' },
   { to: '/product-images', label: 'Images', icon: '🖼️' },
 ]
@@ -59,16 +61,18 @@ export default function Layout() {
       <aside className="w-56 bg-gray-900 text-white flex flex-col shrink-0">
         <div className="p-4 font-bold text-lg border-b border-gray-700">Admin Panel</div>
         <nav className="flex-1 p-2 space-y-1">
-          {nav.map(({ to, label, icon }) => (
+          {nav.map((item) => (
             <Link
-              key={to}
-              to={to}
+              key={item.to}
+              to={item.to}
               className={`flex items-center gap-2 px-3 py-2 rounded text-sm ${
-                location.pathname === to ? 'bg-gray-700' : 'hover:bg-gray-800'
+                item.indent ? 'pl-10' : ''
+              } ${
+                location.pathname === item.to ? 'bg-gray-700' : 'hover:bg-gray-800'
               }`}
             >
-              <span>{icon}</span>
-              {label}
+              <span>{item.icon}</span>
+              {item.label}
             </Link>
           ))}
         </nav>
@@ -100,6 +104,7 @@ export default function Layout() {
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="receipts" element={<ReceiptsPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/change-password" element={<ChangePassword />} />
           <Route path="company" element={<CompanyPage />} />
           <Route path="product-images" element={<ImageGallery />} />
         </Routes>

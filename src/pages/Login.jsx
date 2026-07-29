@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import PasswordInput from '../components/PasswordInput'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -30,12 +31,11 @@ export default function Login() {
           className="w-full border p-2 rounded mb-3"
           value={email} onChange={(e) => setEmail(e.target.value)} required
         />
-        <input
-          type="password" placeholder="Password"
-          className="w-full border p-2 rounded mb-4"
-          value={password} onChange={(e) => setPassword(e.target.value)} required
+        <PasswordInput
+          value={password} placeholder="Password"
+          onChange={(e) => setPassword(e.target.value)}
         />
-        <button className="w-full bg-gray-900 text-white p-2 rounded hover:bg-gray-800">
+        <button className="w-full bg-gray-900 text-white p-2 rounded mt-4 hover:bg-gray-800">
           Sign In
         </button>
       </form>
