@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { t } from '../i18n'
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState([])
@@ -24,52 +25,52 @@ export default function Suppliers() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Suppliers ({total})</h1>
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <h2 className="font-bold mb-3">Add Supplier</h2>
+      <h1 className="text-2xl font-bold mb-4 dark:text-white">{t('suppliers.title')} ({total})</h1>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-4 mb-6">
+        <h2 className="font-bold mb-3 dark:text-white">{t('suppliers.add')}</h2>
         <div className="grid grid-cols-3 gap-3 mb-3">
-          <input placeholder="Company name *" className="border p-2 rounded"
+          <input placeholder={t('suppliers.company_name') + ' *'} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded"
             value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
-          <input placeholder="Contact person" className="border p-2 rounded"
+          <input placeholder={t('suppliers.contact_person')} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded"
             value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} />
-          <input placeholder="Phone" className="border p-2 rounded"
+          <input placeholder={t('customers.phone')} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded"
             value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          <input placeholder="Email" className="border p-2 rounded"
+          <input placeholder="Email" className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded"
             value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <input placeholder="Tax number" className="border p-2 rounded"
+          <input placeholder={t('suppliers.tax_number')} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded"
             value={form.tax_number} onChange={(e) => setForm({ ...form, tax_number: e.target.value })} />
-          <input placeholder="Address" className="border p-2 rounded"
+          <input placeholder={t('suppliers.address')} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded"
             value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
         </div>
-        <textarea placeholder="Notes" className="border p-2 rounded w-full mb-3"
+        <textarea placeholder={t('suppliers.notes')} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded w-full mb-3"
           value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-        <button onClick={add} className="bg-gray-900 text-white px-4 py-2 rounded hover:bg-gray-800">Add Supplier</button>
+        <button onClick={add} className="bg-gray-900 dark:bg-white dark:text-gray-900 text-white px-4 py-2 rounded hover:bg-gray-800 dark:hover:bg-gray-200">{t('suppliers.add')}</button>
       </div>
       <div className="mb-4">
-        <input placeholder="Search suppliers..." className="border p-2 rounded w-64"
+        <input placeholder={t('common.search')} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded w-64"
           value={search} onChange={(e) => { setSearch(e.target.value); fetch(e.target.value) }} />
       </div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left">
+          <thead className="bg-gray-50 dark:bg-gray-900 text-left">
             <tr>
-              <th className="p-3">Company</th>
-              <th className="p-3">Contact</th>
-              <th className="p-3">Phone</th>
-              <th className="p-3">Email</th>
-              <th className="p-3">Tax #</th>
-              <th className="p-3">Address</th>
+              <th className="p-3 dark:text-gray-300">{t('suppliers.company_name')}</th>
+              <th className="p-3 dark:text-gray-300">{t('suppliers.contact_person')}</th>
+              <th className="p-3 dark:text-gray-300">{t('customers.phone')}</th>
+              <th className="p-3 dark:text-gray-300">Email</th>
+              <th className="p-3 dark:text-gray-300">{t('suppliers.tax_number')}</th>
+              <th className="p-3 dark:text-gray-300">{t('suppliers.address')}</th>
             </tr>
           </thead>
           <tbody>
             {suppliers.map((s) => (
-              <tr key={s.id} className="border-t hover:bg-gray-50">
-                <td className="p-3 font-medium">{s.company_name}</td>
-                <td className="p-3 text-gray-500">{s.contact_person || '-'}</td>
-                <td className="p-3 text-gray-500">{s.phone || '-'}</td>
-                <td className="p-3 text-gray-500">{s.email || '-'}</td>
-                <td className="p-3 text-gray-500">{s.tax_number || '-'}</td>
-                <td className="p-3 text-gray-500">{s.address || '-'}</td>
+              <tr key={s.id} className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="p-3 font-medium dark:text-gray-200">{s.company_name}</td>
+                <td className="p-3 text-gray-500 dark:text-gray-400">{s.contact_person || '-'}</td>
+                <td className="p-3 text-gray-500 dark:text-gray-400">{s.phone || '-'}</td>
+                <td className="p-3 text-gray-500 dark:text-gray-400">{s.email || '-'}</td>
+                <td className="p-3 text-gray-500 dark:text-gray-400">{s.tax_number || '-'}</td>
+                <td className="p-3 text-gray-500 dark:text-gray-400">{s.address || '-'}</td>
               </tr>
             ))}
           </tbody>

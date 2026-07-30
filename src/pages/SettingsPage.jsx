@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { t } from '../i18n'
 
 const FIELDS = [
-  { key: 'store_name', label: 'Store Name' },
-  { key: 'currency', label: 'Currency' },
-  { key: 'timezone', label: 'Timezone' },
-  { key: 'tax_rate', label: 'Tax Rate (%)' },
-  { key: 'receipt_footer', label: 'Receipt Footer' },
-  { key: 'sms_provider', label: 'SMS Provider' },
-  { key: 'telegram_bot_token', label: 'Telegram Bot Token' },
+  { key: 'store_name', labelKey: 'settings.store_name' },
+  { key: 'currency', labelKey: 'settings.currency' },
+  { key: 'timezone', labelKey: 'settings.timezone' },
+  { key: 'tax_rate', labelKey: 'settings.tax_rate' },
+  { key: 'receipt_footer', labelKey: 'settings.receipt_footer' },
+  { key: 'sms_provider', labelKey: 'settings.sms_provider' },
+  { key: 'telegram_bot_token', labelKey: 'settings.telegram_token' },
 ]
 
 export default function SettingsPage() {
@@ -35,13 +36,13 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
-      <div className="bg-white rounded-lg shadow p-4 max-w-xl">
-        {FIELDS.map(({ key, label }) => (
+      <h1 className="text-2xl font-bold mb-6 dark:text-white">{t('settings.title')}</h1>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-4 max-w-xl">
+        {FIELDS.map(({ key, labelKey }) => (
           <div key={key} className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t(labelKey)}</label>
             <input
-              className="border p-2 rounded w-full"
+              className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded w-full"
               value={settings[key] || ''}
               onChange={(e) => update(key, e.target.value)}
               onBlur={(e) => save(key, e.target.value)}
