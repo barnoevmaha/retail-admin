@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
-import { t } from '../i18n'
 
 export default function ReceiptsPage() {
   const [receipts, setReceipts] = useState([])
@@ -13,43 +12,57 @@ export default function ReceiptsPage() {
   const downloadReceipt = (id) => window.open(`/api/receipts/${id}/download`, '_blank')
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6 dark:text-white">{t('receipts.title')}</h1>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-gray-900 text-left">
-            <tr>
-              <th className="p-3 dark:text-gray-300">{t('receipts.receipt')}</th>
-              <th className="p-3 dark:text-gray-300">{t('receipts.date')}</th>
-              <th className="p-3 dark:text-gray-300">{t('receipts.total')}</th>
-              <th className="p-3 dark:text-gray-300">{t('receipts.payment')}</th>
-              <th className="p-3 dark:text-gray-300">{t('receipts.status')}</th>
-              <th className="p-3 dark:text-gray-300">{t('receipts.items')}</th>
-              <th className="p-3 dark:text-gray-300">{t('receipts.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {receipts.map((r) => (
-              <tr key={r.id} className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="p-3 font-medium dark:text-gray-200">#{r.id}</td>
-                <td className="p-3 text-gray-500 dark:text-gray-400">{new Date(r.created_at).toLocaleString()}</td>
-                <td className="p-3 font-bold dark:text-gray-200">${r.total.toFixed(2)}</td>
-                <td className="p-3 dark:text-gray-300">{r.payment_method || '-'}</td>
-                <td className="p-3 dark:text-gray-300">{r.status}</td>
-                <td className="p-3 dark:text-gray-300">{r.item_count}</td>
-                <td className="p-3 flex gap-2">
-                  <button onClick={() => printReceipt(r.id)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600">{t('receipts.view')}</button>
-                  <button onClick={() => downloadReceipt(r.id)}
-                    className="bg-gray-500 text-white px-3 py-1 rounded text-xs hover:bg-gray-600">{t('receipts.download')}</button>
-                </td>
+    <div className="flex flex-col gap-8">
+      <header>
+        <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
+          Receipts
+        </h1>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-2">View, reprint, and download sales receipts.</p>
+      </header>
+
+      <div className="bg-surface-container-low border border-outline-variant">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[880px]">
+            <thead>
+              <tr className="border-b border-outline-variant">
+                {['Receipt', 'Date', 'Total', 'Payment', 'Status', 'Items', 'Actions'].map((h, i) => (
+                  <th key={h} className={`py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest ${i >= 2 ? 'text-right' : ''}`}>{h}</th>
+                ))}
               </tr>
-            ))}
-            {receipts.length === 0 && (
-              <tr><td colSpan="7" className="p-3 text-center text-gray-400 dark:text-gray-500">{t('receipts.no_receipts')}</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-outline-variant/30">
+              {receipts.map((r) => (
+                <tr key={r.id} className="hover:bg-surface-container transition-colors">
+                  <td className="py-4 px-6 font-body-md text-body-md text-primary font-medium">#{r.id}</td>
+                  <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">{new Date(r.created_at).toLocaleString()}</td>
+                  <td className="py-4 px-6 text-right font-headline-sm text-headline-sm text-primary font-bold">${r.total.toFixed(2)}</td>
+                  <td className="py-4 px-6 text-right font-body-md text-body-md text-on-surface-variant">{r.payment_method || '—'}</td>
+                  <td className="py-4 px-6 text-right">
+                    <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-[2px] ${
+                      r.status === 'paid' || r.status === 'completed'
+                        ? 'bg-secondary-container text-on-secondary-container'
+                        : 'bg-surface-container-highest text-on-surface-variant'
+                    }`}>
+                      {r.status}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6 text-right font-body-md text-body-md text-on-surface-variant">{r.item_count}</td>
+                  <td className="py-4 px-6 text-right whitespace-nowrap">
+                    <button onClick={() => printReceipt(r.id)} className="px-4 py-1.5 border border-outline-variant font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant hover:border-secondary hover:text-secondary transition-all duration-300 mr-2">
+                      View
+                    </button>
+                    <button onClick={() => downloadReceipt(r.id)} className="px-4 py-1.5 border border-outline-variant font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant hover:border-secondary hover:text-secondary transition-all duration-300">
+                      Download
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {receipts.length === 0 && (
+            <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No receipts yet.</div>
+          )}
+        </div>
       </div>
     </div>
   )

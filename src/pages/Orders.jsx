@@ -1,9 +1,21 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../api/client'
 import { t } from '../i18n'
 
+const statusBadge = (status) => {
+  if (status === 'delivered' || status === 'ready')
+    return 'bg-secondary-container text-on-secondary-container'
+  if (status === 'cancelled') return 'bg-error-container text-on-error-container'
+  if (status === 'paid' || status === 'confirmed')
+    return 'bg-surface-container-highest text-on-surface-variant'
+  return 'bg-surface-container-highest text-on-surface-variant'
+}
+
 export default function Orders() {
   const [orders, setOrders] = useState([])
+  const [filter, setFilter] = useState('all')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     api.get('/orders/').then((r) => setOrders(r.data.items)).catch(() => {})
@@ -16,48 +28,118 @@ export default function Orders() {
 
   const statuses = ['pending', 'confirmed', 'packing', 'ready', 'delivered', 'cancelled']
 
+  const visible = orders.filter((o) => {
+    if (filter !== 'all' && o.status !== filter) return false
+    if (search) {
+      const q = search.toLowerCase()
+      return String(o.id).includes(q) || (o.customer_name || '').toLowerCase().includes(q)
+    }
+    return true
+  })
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4 dark:text-white">{t('orders.title')}</h1>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-gray-900 text-left">
-            <tr>
-              <th className="p-3 dark:text-gray-300">#</th>
-              <th className="p-3 dark:text-gray-300">{t('orders.status')}</th>
-              <th className="p-3 dark:text-gray-300">{t('orders.total')}</th>
-              <th className="p-3 dark:text-gray-300">{t('orders.payment')}</th>
-              <th className="p-3 dark:text-gray-300">{t('orders.date')}</th>
-              <th className="p-3 dark:text-gray-300">{t('orders.actions')}</th>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">{t('orders.title')}</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Manage and curate your global transaction flow.</p>
+        </div>
+        <button className="flex items-center gap-2 px-6 py-2 border border-outline-variant hover:border-secondary hover:text-secondary transition-all duration-300 font-label-sm text-label-sm uppercase tracking-widest w-fit">
+          <span className="material-symbols-outlined">ios_share</span>
+          Export
+        </button>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-6 py-4 border-y border-outline-variant">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-label-sm text-on-surface-variant mr-2 uppercase tracking-tighter">Filter by</span>
+          <div className="flex gap-1 p-1 bg-surface-container rounded-[4px]">
+            {['all', 'pending', 'paid', 'shipped'].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-4 py-1.5 text-label-sm font-medium rounded-[4px] transition-colors ${
+                  filter === f ? 'bg-secondary text-on-secondary' : 'text-on-surface-variant hover:text-primary'
+                }`}
+              >
+                {f === 'all' ? 'All' : f === 'paid' ? 'Paid' : f === 'shipped' ? 'Shipped' : 'Pending'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="relative w-full md:w-80">
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant">search</span>
+          <input
+            type="text"
+            placeholder="Search orders, customers..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-transparent border-b border-outline-variant focus:border-secondary focus:ring-0 pl-8 pr-4 py-2 text-body-md transition-all outline-none placeholder:text-on-surface-variant/40"
+          />
+        </div>
+      </div>
+
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[900px]">
+          <thead>
+            <tr className="border-b border-outline-variant">
+              {['Order #', t('orders.date'), 'Customer', 'Items', t('orders.payment'), t('orders.status'), 'Total'].map((h, i) => (
+                <th key={h} className={`pb-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest px-4 ${i === 6 ? 'text-right' : ''}`}>
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody>
-            {orders.map((o) => (
-              <tr key={o.id} className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="p-3 font-medium dark:text-gray-200">#{o.id}</td>
-                <td className="p-3">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    o.status === 'delivered' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
-                    o.status === 'cancelled' ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300' :
-                    'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
-                  }`}>{o.status}</span>
+          <tbody className="divide-y divide-outline-variant/30">
+            {visible.map((o) => (
+              <tr key={o.id} className="group hover:bg-surface-container-low transition-colors">
+                <td className="py-5 px-4 font-medium text-primary">
+                  <Link to={`/orders/${o.id}`} className="hover:text-secondary transition-colors">#{o.id}</Link>
                 </td>
-                <td className="p-3 dark:text-gray-200">${parseFloat(o.total_amount).toFixed(2)}</td>
-                <td className="p-3 text-gray-500 dark:text-gray-400">{o.payment_method || '-'}</td>
-                <td className="p-3 text-gray-500 dark:text-gray-400">{new Date(o.created_at).toLocaleDateString()}</td>
-                <td className="p-3">
-                  <select
-                    className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded p-1 text-xs"
-                    value={o.status}
-                    onChange={(e) => updateStatus(o.id, e.target.value)}
-                  >
-                    {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">
+                  {new Date(o.created_at).toLocaleDateString()}
+                </td>
+                <td className="py-5 px-4 text-on-surface font-body-md text-body-md">{o.customer_name || 'Walk-in'}</td>
+                <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">{o.items_count ?? '—'}</td>
+                <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">{o.payment_method || '—'}</td>
+                <td className="py-5 px-4">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-[2px] ${statusBadge(o.status)}`}>
+                      {o.status}
+                    </span>
+                    <select
+                      className="bg-surface-container-high border border-outline-variant text-label-sm text-on-surface rounded-[2px] px-1 py-0.5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer outline-none"
+                      value={o.status}
+                      onChange={(e) => updateStatus(o.id, e.target.value)}
+                      title="Update status"
+                    >
+                      {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </td>
+                <td className="py-5 px-4 text-right font-headline-sm text-headline-sm text-primary">
+                  ${parseFloat(o.total_amount).toFixed(2)}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {visible.length === 0 && (
+          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No orders found.</div>
+        )}
+      </div>
+
+      <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 py-6 border-t border-outline-variant">
+        <span className="text-label-sm text-on-surface-variant">Showing {visible.length} of {orders.length} items</span>
+        <div className="flex items-center gap-2">
+          <button className="w-10 h-10 flex items-center justify-center border border-outline-variant hover:border-secondary hover:text-secondary transition-colors">
+            <span className="material-symbols-outlined">chevron_left</span>
+          </button>
+          <button className="w-10 h-10 flex items-center justify-center border border-secondary text-secondary bg-surface-container-low font-label-sm text-label-sm">1</button>
+          <button className="w-10 h-10 flex items-center justify-center border border-outline-variant hover:border-secondary hover:text-secondary transition-colors">
+            <span className="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
       </div>
     </div>
   )

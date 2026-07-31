@@ -2,35 +2,112 @@ import { useState, useEffect } from 'react'
 import api from '../api/client'
 import { t } from '../i18n'
 
+const imgSrc = (c) => (typeof c.image_url === 'string' ? c.image_url : typeof c.image === 'string' ? c.image : null)
+
 export default function Categories() {
   const [cats, setCats] = useState([])
+  const [formOpen, setFormOpen] = useState(false)
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
 
-  useEffect(() => { api.get('/categories/').then((r) => setCats(r.data)) }, [])
+  useEffect(() => { api.get('/categories/').then((r) => setCats(r.data)).catch(() => {}) }, [])
+
+  const refresh = () => api.get('/categories/').then((r) => setCats(r.data))
 
   const add = async () => {
     if (!name || !slug) return
     await api.post('/categories/', { name, slug })
-    setName(''); setSlug('')
-    api.get('/categories/').then((r) => setCats(r.data))
+    setName(''); setSlug(''); setFormOpen(false)
+    refresh()
   }
 
+  const remove = async (id) => {
+    if (!window.confirm('Delete this category?')) return
+    await api.delete(`/categories/${id}`)
+    refresh()
+  }
+
+  const inputClass =
+    'w-full bg-transparent border-0 border-b border-outline-variant text-on-surface font-body-lg text-body-lg py-2 px-0 focus:ring-0 focus:outline-none focus:border-secondary transition-colors duration-300'
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4 dark:text-white">{t('categories.title')}</h1>
-      <div className="flex gap-2 mb-4">
-        <input placeholder={t('categories.name')} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded flex-1" value={name} onChange={(e) => setName(e.target.value)} />
-        <input placeholder={t('categories.slug')} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded flex-1" value={slug} onChange={(e) => setSlug(e.target.value)} />
-        <button onClick={add} className="bg-gray-900 dark:bg-white dark:text-gray-900 text-white px-4 rounded hover:bg-gray-800 dark:hover:bg-gray-200">{t('common.create')}</button>
+    <div className="flex flex-col gap-8">
+      <div className="flex justify-between items-end mb-2">
+        <div>
+          <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">{t('categories.title')}</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Manage your product categorization hierarchy.</p>
+        </div>
+        <button
+          onClick={() => setFormOpen(!formOpen)}
+          className="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-[4px] hover:border-secondary hover:text-secondary transition-colors duration-300 text-primary font-label-sm text-label-sm uppercase tracking-wider"
+        >
+          <span className="material-symbols-outlined text-[18px]">add</span>
+          {t('common.create')}
+        </button>
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50">
-        {cats.map((c) => (
-          <div key={c.id} className="flex justify-between p-3 border-b dark:border-gray-700 text-sm">
-            <span className="dark:text-gray-200">{c.name}</span>
-            <span className="text-gray-500 dark:text-gray-400">{c.slug}</span>
-          </div>
-        ))}
+
+      {formOpen && (
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] items-end gap-6 border border-outline-variant rounded-[4px] bg-surface-container-low p-6">
+          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+            {t('categories.name')}
+            <input className={inputClass + ' mt-2'} value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+            {t('categories.slug')}
+            <input className={inputClass + ' mt-2'} value={slug} onChange={(e) => setSlug(e.target.value)} />
+          </label>
+          <button
+            onClick={add}
+            className="px-6 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm text-on-surface hover:border-secondary hover:text-secondary transition-colors duration-300"
+          >
+            ADD
+          </button>
+        </div>
+      )}
+
+      <div className="bg-surface-container-low border border-outline-variant rounded-lg overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-outline-variant bg-surface-container">
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-12"></th>
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-24">Image</th>
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Name</th>
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Slug</th>
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Products</th>
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right w-28">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-outline-variant">
+            {cats.map((c) => (
+              <tr key={c.id} className="hover:bg-surface-container/50 transition-colors duration-200 group">
+                <td className="py-4 px-6 text-center cursor-move text-on-surface-variant group-hover:text-primary transition-colors">
+                  <span className="material-symbols-outlined text-[20px]">drag_indicator</span>
+                </td>
+                <td className="py-4 px-6">
+                  <div className="w-12 h-12 rounded-[4px] bg-surface-container-highest border border-outline-variant flex items-center justify-center overflow-hidden">
+                    {imgSrc(c) ? (
+                      <img className="w-full h-full object-cover" src={imgSrc(c)} alt={c.name} />
+                    ) : (
+                      <span className="font-headline-sm text-headline-sm text-on-surface-variant/60">{c.name?.[0]?.toUpperCase()}</span>
+                    )}
+                  </div>
+                </td>
+                <td className="py-4 px-6 font-body-lg text-body-lg text-primary">{c.name}</td>
+                <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">/{c.slug}</td>
+                <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant text-right">{c.products_count ?? '-'}</td>
+                <td className="py-4 px-6">
+                  <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button className="text-on-surface-variant hover:text-primary transition-colors"><span className="material-symbols-outlined text-[20px]">edit</span></button>
+                    <button onClick={() => remove(c.id)} className="text-on-surface-variant hover:text-error transition-colors"><span className="material-symbols-outlined text-[20px]">delete</span></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {cats.length === 0 && (
+          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No categories yet.</div>
+        )}
       </div>
     </div>
   )

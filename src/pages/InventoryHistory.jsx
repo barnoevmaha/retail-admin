@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
-import { t } from '../i18n'
+
+const opBadge = {
+  receiving: 'bg-secondary-container text-on-secondary-container',
+  sale: 'bg-error-container text-on-error-container',
+  return: 'bg-surface-container-highest text-on-surface',
+  write_off: 'bg-surface-container-highest text-on-surface-variant',
+  adjustment: 'bg-surface-container-highest text-on-surface-variant',
+  transfer: 'bg-surface-container-highest text-on-surface-variant',
+}
 
 export default function InventoryHistory() {
   const [movements, setMovements] = useState([])
@@ -17,58 +25,81 @@ export default function InventoryHistory() {
   useEffect(() => { fetch() }, [])
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6 dark:text-white">{t('inventory.title')}</h1>
-      <div className="flex gap-4 mb-4">
-        <input type="text" placeholder={t('inventory.variant_id')} value={variantId}
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
+            Inventory History
+          </h1>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Full audit trail of every stock movement.</p>
+        </div>
+        <button onClick={fetch} className="flex items-center gap-2 px-6 py-2 border border-outline-variant hover:border-secondary hover:text-secondary transition-all duration-300 font-label-sm text-label-sm uppercase tracking-widest w-fit">
+          <span className="material-symbols-outlined">refresh</span>
+          Refresh
+        </button>
+      </header>
+
+      <div className="flex flex-wrap items-center gap-4 py-4 border-y border-outline-variant">
+        <input
+          type="text" placeholder="Variant ID"
+          className="w-32 bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 font-body-md text-body-md placeholder:text-on-surface-variant/40"
+          value={variantId}
           onChange={(e) => setVariantId(e.target.value)}
-          className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded px-3 py-1 text-sm w-32" />
-        <select value={operation} onChange={(e) => setOperation(e.target.value)} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded px-3 py-1 text-sm">
-          <option value="">{t('inventory.all_ops')}</option>
+        />
+        <select
+          value={operation}
+          onChange={(e) => setOperation(e.target.value)}
+          className="bg-transparent border border-outline-variant focus:border-secondary outline-none px-3 py-2 text-label-sm text-label-sm uppercase tracking-widest cursor-pointer"
+        >
+          <option value="" className="bg-surface-container">All operations</option>
           {['receiving', 'sale', 'return', 'write_off', 'adjustment', 'transfer'].map((o) => (
-            <option key={o} value={o}>{o.replace('_', ' ')}</option>
+            <option key={o} value={o} className="bg-surface-container">{o.replace('_', ' ')}</option>
           ))}
         </select>
-        <button onClick={fetch} className="bg-blue-600 text-white px-4 py-1 rounded text-sm">{t('common.search')}</button>
+        <button onClick={fetch} className="px-6 py-2 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 transition-all">
+          Search
+        </button>
+        <span className="font-label-sm text-label-sm text-on-surface-variant ml-auto">{movements.length} entries</span>
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-gray-900 text-left">
-            <tr>
-              <th className="p-3 dark:text-gray-300">{t('inventory.time')}</th>
-              <th className="p-3 dark:text-gray-300">{t('inventory.product')}</th>
-              <th className="p-3 dark:text-gray-300">SKU</th>
-              <th className="p-3 dark:text-gray-300">{t('inventory.operation')}</th>
-              <th className="p-3 dark:text-gray-300">{t('inventory.qty')}</th>
-              <th className="p-3 dark:text-gray-300">{t('inventory.warehouse')}</th>
-              <th className="p-3 dark:text-gray-300">{t('inventory.by')}</th>
-              <th className="p-3 dark:text-gray-300">{t('inventory.doc')}</th>
-              <th className="p-3 dark:text-gray-300">{t('inventory.reason')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {movements.map((m) => (
-              <tr key={m.id} className="border-t dark:border-gray-700">
-                <td className="p-3 whitespace-nowrap dark:text-gray-300">{new Date(m.created_at).toLocaleString()}</td>
-                <td className="p-3 dark:text-gray-300">{m.product_name || '-'}</td>
-                <td className="p-3 dark:text-gray-300">{m.variant_sku || '-'}</td>
-                <td className="p-3">
-                  <span className={`font-medium ${m.operation === 'receiving' ? 'text-green-600 dark:text-green-400' : m.operation === 'sale' ? 'text-red-600 dark:text-red-400' : m.operation === 'return' ? 'text-blue-600 dark:text-blue-400' : m.operation === 'write_off' ? 'text-orange-600 dark:text-orange-400' : 'text-purple-600 dark:text-purple-400'}`}>
-                    {m.operation.replace('_', ' ')}
-                  </span>
-                </td>
-                <td className="p-3 dark:text-gray-300">{m.quantity > 0 ? `+${m.quantity}` : m.quantity}</td>
-                <td className="p-3 dark:text-gray-300">{m.warehouse_name || '-'}</td>
-                <td className="p-3 dark:text-gray-300">{m.performed_by_name || '-'}</td>
-                <td className="p-3 dark:text-gray-300">{m.document_number || '-'}</td>
-                <td className="p-3 max-w-xs truncate dark:text-gray-300">{m.reason || '-'}</td>
+
+      <div className="bg-surface-container-low border border-outline-variant">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[1080px]">
+            <thead>
+              <tr className="border-b border-outline-variant">
+                {['Time', 'Product', 'SKU', 'Operation', 'Qty', 'Warehouse', 'By', 'Document', 'Reason'].map((h) => (
+                  <th key={h} className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">{h}</th>
+                ))}
               </tr>
-            ))}
-            {movements.length === 0 && (
-              <tr><td colSpan="9" className="p-3 text-center text-gray-400 dark:text-gray-500">{t('inventory.no_movements')}</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-outline-variant/30">
+              {movements.map((m) => (
+                <tr key={m.id} className="hover:bg-surface-container transition-colors">
+                  <td className="py-4 px-6 whitespace-nowrap text-on-surface-variant font-body-md text-body-md">
+                    {new Date(m.created_at).toLocaleString()}
+                  </td>
+                  <td className="py-4 px-6 font-body-md text-body-md text-on-surface">{m.product_name || '-'}</td>
+                  <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">{m.variant_sku || '-'}</td>
+                  <td className="py-4 px-6">
+                    <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-[2px] ${opBadge[m.operation] || 'bg-surface-container-highest text-on-surface-variant'}`}>
+                      {m.operation.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className={`py-4 px-6 font-body-md text-body-md font-bold ${m.quantity > 0 ? 'text-secondary' : 'text-error'}`}>
+                    {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
+                  </td>
+                  <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">{m.warehouse_name || '-'}</td>
+                  <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">{m.performed_by_name || '-'}</td>
+                  <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">{m.document_number || '-'}</td>
+                  <td className="py-4 px-6 max-w-xs truncate font-body-md text-body-md text-on-surface-variant">{m.reason || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {movements.length === 0 && (
+            <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No movements found.</div>
+          )}
+        </div>
       </div>
     </div>
   )

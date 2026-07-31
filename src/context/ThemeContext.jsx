@@ -3,9 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const ThemeContext = createContext(null)
 
 function getInitialTheme() {
-  const saved = localStorage.getItem('theme')
-  if (saved === 'light' || saved === 'dark') return saved
-  return 'system'
+  return 'dark'
 }
 
 function resolveTheme(mode) {

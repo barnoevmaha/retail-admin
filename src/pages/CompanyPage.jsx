@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
-import { t } from '../i18n'
+
+const FIELDS = [
+  ['name', 'Company Name'],
+  ['address', 'Address'],
+  ['phone', 'Phone'],
+  ['email', 'Email'],
+  ['logo', 'Logo URL'],
+  ['tin', 'TIN / Tax ID'],
+]
 
 export default function CompanyPage() {
   const [form, setForm] = useState({ name: '', address: '', phone: '', email: '', logo: '', tin: '' })
@@ -15,36 +23,42 @@ export default function CompanyPage() {
   const save = async () => {
     try {
       await api.put('/company', form)
-      setMsg(t('common.success') + '!')
+      setMsg('Saved!')
       setTimeout(() => setMsg(''), 2000)
     } catch (err) {
-      setMsg(t('toast.error') + ': ' + (err.response?.data?.detail || 'Unknown'))
+      setMsg('Error: ' + (err.response?.data?.detail || 'Unknown'))
     }
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6 dark:text-white">{t('company.title')}</h1>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-4 max-w-xl">
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          {[
-            ['name', 'company.name'],
-            ['address', 'company.address'],
-            ['phone', 'company.phone'],
-            ['email', 'company.email'],
-            ['logo', 'company.logo'],
-            ['tin', 'company.tin'],
-          ].map(([field, labelKey]) => (
-            <div key={field}>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t(labelKey)}</label>
-              <input className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded w-full" value={form[field] || ''}
-                onChange={(e) => setForm({ ...form, [field]: e.target.value })} />
+    <div className="flex flex-col gap-8">
+      <header>
+        <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
+          Company
+        </h1>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-2">Company details shown on receipts and documents.</p>
+      </header>
+
+      <div className="p-8 bg-surface-container-low border border-outline-variant max-w-2xl">
+        <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-8">Company Details</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-6">
+          {FIELDS.map(([key, label]) => (
+            <div key={key}>
+              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{label}</label>
+              <input
+                type="text"
+                className="w-full bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 text-body-lg font-body-lg placeholder:text-on-surface-variant/40"
+                value={form[key] || ''}
+                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+              />
             </div>
           ))}
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{t('company.receipt_hint')}</p>
-        <button onClick={save} className="bg-gray-900 dark:bg-white dark:text-gray-900 text-white px-4 py-2 rounded hover:bg-gray-800 dark:hover:bg-gray-200">{t('common.save')}</button>
-        {msg && <span className="ml-3 text-sm text-green-600 dark:text-green-400">{msg}</span>}
+        <p className="font-label-sm text-label-sm text-on-surface-variant/50 mb-8">These details appear on printed receipts and generated documents.</p>
+        <button onClick={save} className="px-8 py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 active:scale-[0.99] transition-all">
+          Save
+        </button>
+        {msg && <span className="ml-4 text-sm text-secondary">{msg}</span>}
       </div>
     </div>
   )

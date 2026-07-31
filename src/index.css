@@ -1,5 +1,153 @@
 @import "tailwindcss";
 
+@theme {
+  --color-background: #131313;
+  --color-on-background: #e5e2e1;
+  --color-surface: #131313;
+  --color-surface-dim: #131313;
+  --color-surface-bright: #393939;
+  --color-surface-container-lowest: #0e0e0e;
+  --color-surface-container-low: #1c1b1b;
+  --color-surface-container: #20201f;
+  --color-surface-container-high: #2a2a29;
+  --color-surface-container-highest: #353534;
+  --color-surface-variant: #353534;
+  --color-on-surface: #e5e2e1;
+  --color-on-surface-variant: #c5c7c2;
+  --color-primary: #e5e2e1;
+  --color-on-primary: #313030;
+  --color-primary-container: #c9c6c5;
+  --color-on-primary-container: #535252;
+  --color-primary-fixed: #e5e2e1;
+  --color-primary-fixed-dim: #c9c6c5;
+  --color-secondary: #e9c176;
+  --color-on-secondary: #412d00;
+  --color-secondary-container: #5d4200;
+  --color-on-secondary-container: #d6b066;
+  --color-secondary-fixed: #ffdea5;
+  --color-secondary-fixed-dim: #e9c176;
+  --color-outline: #8f918d;
+  --color-outline-variant: #454744;
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+  --color-inverse-surface: #e5e2e1;
+  --color-inverse-on-surface: #313030;
+  --color-inverse-primary: #5f5e5d;
+  --color-surface-tint: #c9c6c5;
+
+  --spacing-sidebar-width: 280px;
+  --spacing-topbar-height: 72px;
+  --spacing-gutter: 24px;
+  --spacing-margin-desktop: 48px;
+  --spacing-margin-mobile: 20px;
+  --spacing-max-width: 1440px;
+
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  --font-headline-lg: "Space Grotesk", sans-serif;
+  --font-headline-md: "Space Grotesk", sans-serif;
+  --font-headline-sm: "Space Grotesk", sans-serif;
+  --font-headline-lg-mobile: "Space Grotesk", sans-serif;
+  --font-body-lg: "Inter", sans-serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-label-sm: "Inter", sans-serif;
+
+  --text-headline-lg: 40px;
+  --text-headline-lg--line-height: 48px;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-lg--font-weight: 500;
+  --text-headline-md: 28px;
+  --text-headline-md--line-height: 36px;
+  --text-headline-md--letter-spacing: -0.01em;
+  --text-headline-md--font-weight: 500;
+  --text-headline-sm: 22px;
+  --text-headline-sm--line-height: 28px;
+  --text-headline-sm--font-weight: 500;
+  --text-headline-lg-mobile: 32px;
+  --text-headline-lg-mobile--line-height: 40px;
+  --text-headline-lg-mobile--font-weight: 500;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-lg--font-weight: 400;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-md--font-weight: 400;
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+  --text-label-sm--letter-spacing: 0.1em;
+  --text-label-sm--font-weight: 500;
+}
+
+body {
+  @apply bg-background text-on-surface font-body-md text-body-md antialiased;
+}
+
+::selection {
+  background: rgb(233 193 118 / 0.3);
+  color: #e9c176;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+}
+
+.luxury-bg {
+  background: radial-gradient(circle at 50% 0%, rgb(233 193 118 / 0.05) 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, rgb(201 198 197 / 0.03) 0%, transparent 50%);
+}
+
+.glass-panel {
+  background: rgba(32, 32, 31, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid #454744;
+}
+
+.input-underline {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #454744;
+  color: #e5e2e1;
+  padding: 8px 0;
+  transition: border-color 0.3s;
+}
+.input-underline:focus {
+  border-bottom-color: #e9c176;
+  outline: none;
+}
+
+.custom-checkbox {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #8f918d;
+  border-radius: 2px;
+  background-color: transparent;
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+.custom-checkbox::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  transform: scale(0);
+  transition: 120ms transform ease-in-out;
+  box-shadow: inset 1em 1em #e9c176;
+  transform-origin: bottom left;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+.custom-checkbox:checked {
+  border-color: #e9c176;
+}
+.custom-checkbox:checked::before {
+  transform: scale(1);
+}
+
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }

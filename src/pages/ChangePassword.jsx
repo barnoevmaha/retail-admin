@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
-import { t } from '../i18n'
 import PasswordInput from '../components/PasswordInput'
 
 export default function ChangePassword() {
@@ -23,69 +22,73 @@ export default function ChangePassword() {
       setMessage('success')
     } catch (err) {
       const detail = err.response?.data?.detail
-      if (typeof detail === 'string') {
-        setErrors({ form: detail })
-      } else {
-        setErrors({ form: t('toast.error') })
-      }
+      setErrors({ form: typeof detail === 'string' ? detail : 'Something went wrong' })
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6 dark:text-white">{t('change_password.title')}</h1>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-4 max-w-xl">
+    <div className="flex flex-col gap-8">
+      <header>
+        <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
+          Change Password
+        </h1>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-2">Update your account password.</p>
+      </header>
+
+      <div className="p-8 bg-surface-container-low border border-outline-variant max-w-xl">
         {message === 'success' && (
-          <div className="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 p-3 rounded mb-4 text-sm border border-green-200 dark:border-green-800">
-            {t('change_password.success')}
+          <div className="bg-secondary-container/30 border border-secondary-container text-on-secondary-container p-3 mb-6 font-body-md text-body-md">
+            Password changed successfully.
           </div>
         )}
         {errors.form && (
-          <div className="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 p-3 rounded mb-4 text-sm border border-red-200 dark:border-red-800">
+          <div className="bg-error-container/30 border border-error/50 text-error p-3 mb-6 font-body-md text-body-md">
             {errors.form}
           </div>
         )}
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('change_password.current')}</label>
-            <PasswordInput
-              value={form.current_password}
-              onChange={set('current_password')}
-              placeholder={t('change_password.current_placeholder')}
-            />
+          <div className="space-y-6">
+            <div>
+              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">Current Password</label>
+              <PasswordInput
+                value={form.current_password}
+                onChange={set('current_password')}
+                placeholder="Enter current password"
+              />
+            </div>
+            <div>
+              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">New Password</label>
+              <PasswordInput
+                value={form.new_password}
+                onChange={set('new_password')}
+                placeholder="Enter new password"
+              />
+            </div>
+            <div>
+              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">Confirm New Password</label>
+              <PasswordInput
+                value={form.confirm_password}
+                onChange={set('confirm_password')}
+                placeholder="Repeat new password"
+              />
+            </div>
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('change_password.new')}</label>
-            <PasswordInput
-              value={form.new_password}
-              onChange={set('new_password')}
-              placeholder={t('change_password.new_placeholder')}
-            />
-          </div>
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('change_password.confirm')}</label>
-            <PasswordInput
-              value={form.confirm_password}
-              onChange={set('confirm_password')}
-              placeholder={t('change_password.confirm_placeholder')}
-            />
-          </div>
-          <div className="flex gap-3">
+          <div className="flex gap-4 mt-8">
             <button
               type="button"
               onClick={() => navigate('/settings')}
-              className="px-4 py-2 border dark:border-gray-700 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="px-8 py-3 border border-outline-variant text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest hover:border-secondary hover:text-secondary transition-all duration-300"
             >
-              {t('common.cancel')}
+              Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50"
+              className="px-8 py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-50"
             >
-              {saving ? t('common.loading') : t('change_password.save')}
+              {saving ? 'Saving...' : 'Save Password'}
             </button>
           </div>
         </form>

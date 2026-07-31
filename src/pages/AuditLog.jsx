@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
-import { t } from '../i18n'
 
-const actionColors = {
-  login: 'text-green-600 dark:text-green-400',
-  logout: 'text-orange-600 dark:text-orange-400',
-  create: 'text-blue-600 dark:text-blue-400',
-  update: 'text-yellow-600 dark:text-yellow-400',
-  delete: 'text-red-600 dark:text-red-400',
-  inventory_change: 'text-purple-600 dark:text-purple-400',
+const actionBadge = {
+  login: 'bg-surface-container-highest text-on-surface-variant',
+  logout: 'bg-surface-container-highest text-on-surface-variant',
+  create: 'bg-secondary-container text-on-secondary-container',
+  update: 'bg-surface-container-highest text-on-surface',
+  delete: 'bg-error-container text-on-error-container',
+  inventory_change: 'bg-secondary-container text-on-secondary-container',
 }
 
 export default function AuditLog() {
@@ -25,55 +24,81 @@ export default function AuditLog() {
 
   useEffect(() => { fetch() }, [entity, action])
 
+  const selectCls =
+    'bg-transparent border border-outline-variant focus:border-secondary outline-none px-3 py-2 text-label-sm text-label-sm uppercase tracking-widest cursor-pointer'
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6 dark:text-white">{t('audit.title')}</h1>
-      <div className="flex gap-4 mb-4">
-        <select value={entity} onChange={(e) => setEntity(e.target.value)} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded px-3 py-1 text-sm">
-          <option value="">{t('audit.all_entities')}</option>
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
+            Audit Log
+          </h1>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Track every action taken across the system.</p>
+        </div>
+        <button onClick={fetch} className="flex items-center gap-2 px-6 py-2 border border-outline-variant hover:border-secondary hover:text-secondary transition-all duration-300 font-label-sm text-label-sm uppercase tracking-widest w-fit">
+          <span className="material-symbols-outlined">refresh</span>
+          Refresh
+        </button>
+      </header>
+
+      <div className="flex flex-wrap items-center gap-4 py-4 border-y border-outline-variant">
+        <select value={entity} onChange={(e) => setEntity(e.target.value)} className={selectCls}>
+          <option value="" className="bg-surface-container">All entities</option>
           {['user', 'product', 'variant', 'order', 'category', 'brand'].map((e) => (
-            <option key={e} value={e}>{e}</option>
+            <option key={e} value={e} className="bg-surface-container">{e}</option>
           ))}
         </select>
-        <select value={action} onChange={(e) => setAction(e.target.value)} className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded px-3 py-1 text-sm">
-          <option value="">{t('audit.all_actions')}</option>
+        <select value={action} onChange={(e) => setAction(e.target.value)} className={selectCls}>
+          <option value="" className="bg-surface-container">All actions</option>
           {['login', 'logout', 'create', 'update', 'delete', 'inventory_change'].map((a) => (
-            <option key={a} value={a}>{a.replace('_', ' ')}</option>
+            <option key={a} value={a} className="bg-surface-container">{a.replace('_', ' ')}</option>
           ))}
         </select>
-        <button onClick={fetch} className="bg-blue-600 text-white px-4 py-1 rounded text-sm">{t('audit.refresh')}</button>
+        <span className="font-label-sm text-label-sm text-on-surface-variant ml-auto">{logs.length} entries</span>
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-gray-900 text-left">
-            <tr>
-              <th className="p-3 dark:text-gray-300">{t('audit.time')}</th>
-              <th className="p-3 dark:text-gray-300">{t('audit.user')}</th>
-              <th className="p-3 dark:text-gray-300">{t('audit.action')}</th>
-              <th className="p-3 dark:text-gray-300">{t('audit.entity')}</th>
-              <th className="p-3 dark:text-gray-300">{t('audit.entity_id')}</th>
-              <th className="p-3 dark:text-gray-300">{t('audit.details')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((log) => (
-              <tr key={log.id} className="border-t dark:border-gray-700">
-                <td className="p-3 whitespace-nowrap dark:text-gray-300">{new Date(log.created_at).toLocaleString()}</td>
-                <td className="p-3 dark:text-gray-300">{log.user_email || '-'}</td>
-                <td className={`p-3 font-medium ${actionColors[log.action] || ''}`}>{log.action.replace('_', ' ')}</td>
-                <td className="p-3 dark:text-gray-300">{log.entity}</td>
-                <td className="p-3 dark:text-gray-300">{log.entity_id ?? '-'}</td>
-                <td className="p-3 max-w-xs truncate dark:text-gray-300">
-                  {log.old_values && <span className="text-red-500 dark:text-red-400 text-xs">{t('audit.old')}: {JSON.stringify(log.old_values)} </span>}
-                  {log.new_values && <span className="text-green-500 dark:text-green-400 text-xs">{t('audit.new')}: {JSON.stringify(log.new_values)}</span>}
-                </td>
+
+      <div className="bg-surface-container-low border border-outline-variant">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[960px]">
+            <thead>
+              <tr className="border-b border-outline-variant">
+                {['Time', 'User', 'Action', 'Entity', 'Entity ID', 'Details'].map((h) => (
+                  <th key={h} className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">{h}</th>
+                ))}
               </tr>
-            ))}
-            {logs.length === 0 && (
-              <tr><td colSpan="6" className="p-3 text-center text-gray-400 dark:text-gray-500">{t('audit.no_logs')}</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-outline-variant/30">
+              {logs.map((log) => (
+                <tr key={log.id} className="hover:bg-surface-container transition-colors">
+                  <td className="py-4 px-6 whitespace-nowrap text-on-surface-variant font-body-md text-body-md">
+                    {new Date(log.created_at).toLocaleString()}
+                  </td>
+                  <td className="py-4 px-6 font-body-md text-body-md text-on-surface">{log.user_email || '-'}</td>
+                  <td className="py-4 px-6">
+                    <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-[2px] ${actionBadge[log.action] || 'bg-surface-container-highest text-on-surface-variant'}`}>
+                      {log.action.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">{log.entity}</td>
+                  <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">{log.entity_id ?? '-'}</td>
+                  <td className="py-4 px-6 max-w-xs">
+                    {log.old_values && (
+                      <span className="block text-xs text-error truncate">old: {JSON.stringify(log.old_values)}</span>
+                    )}
+                    {log.new_values && (
+                      <span className="block text-xs text-secondary truncate">new: {JSON.stringify(log.new_values)}</span>
+                    )}
+                    {!log.old_values && !log.new_values && <span className="font-body-md text-body-md text-on-surface-variant/60">—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {logs.length === 0 && (
+            <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No log entries match.</div>
+          )}
+        </div>
       </div>
     </div>
   )

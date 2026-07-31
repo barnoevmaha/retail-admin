@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
-import { t } from '../i18n'
 
 export default function Warehouse() {
   const [barcode, setBarcode] = useState('')
@@ -9,7 +8,12 @@ export default function Warehouse() {
   const [movements, setMovements] = useState([])
   const [msg, setMsg] = useState('')
 
-  useEffect(() => { api.get('/warehouse/movements', { params: { limit: 20 } }).then((r) => setMovements(r.data)) }, [])
+  useEffect(() => {
+    api.get('/warehouse/movements', { params: { limit: 20 } }).then((r) => setMovements(r.data)).catch(() => {})
+  }, [])
+
+  const refresh = () =>
+    api.get('/warehouse/movements', { params: { limit: 20 } }).then((r) => setMovements(r.data)).catch(() => {})
 
   const lookupBarcode = async () => {
     if (!barcode) return
@@ -19,58 +23,130 @@ export default function Warehouse() {
       setMsg('')
     } catch {
       setVariant(null)
-      setMsg(t('warehouse.not_found'))
+      setMsg('Variant not found')
     }
   }
 
   const receive = async () => {
     if (!variant) return
-    await api.post('/warehouse/receive', { variant_id: variant.id, quantity, operation: 'receiving' })
-    setMsg(`${t('warehouse.received')} ${quantity} x ${variant.barcode}`)
-    setQuantity(1)
-    setBarcode('')
-    setVariant(null)
-    api.get('/warehouse/movements', { params: { limit: 20 } }).then((r) => setMovements(r.data))
+    try {
+      await api.post('/warehouse/receive', { variant_id: variant.id, quantity, operation: 'receiving' })
+      setMsg(`Received ${quantity} x ${variant.barcode}`)
+      setQuantity(1)
+      setBarcode('')
+      setVariant(null)
+      refresh()
+    } catch (err) {
+      setMsg('Error: ' + (err.response?.data?.detail || 'Unknown'))
+    }
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4 dark:text-white">{t('warehouse.title')}</h1>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-4 mb-6">
-        <h2 className="font-bold mb-3 dark:text-white">{t('warehouse.receive_stock')}</h2>
-        <div className="flex gap-2 mb-3">
-          <input
-            type="text" placeholder={t('warehouse.scan_barcode')}
-            className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded flex-1"
-            value={barcode} onChange={(e) => setBarcode(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && lookupBarcode()}
-            autoFocus
-          />
-          <button onClick={lookupBarcode} className="bg-gray-200 dark:bg-gray-700 dark:text-gray-200 px-4 rounded hover:bg-gray-300 dark:hover:bg-gray-600">{t('warehouse.lookup')}</button>
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
+            Warehouse
+          </h1>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Receive stock, track inventory, manage warehouse operations.</p>
         </div>
-        {variant && (
-          <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded mb-3 text-sm dark:text-green-200">
-            <strong>{variant.barcode}</strong> — {variant.sku} | {t('warehouse.qty')}: {variant.quantity}
+        <button onClick={refresh} className="flex items-center gap-2 px-6 py-2 border border-outline-variant hover:border-secondary hover:text-secondary transition-all duration-300 font-label-sm text-label-sm uppercase tracking-widest w-fit">
+          <span className="material-symbols-outlined">refresh</span>
+          Refresh
+        </button>
+      </header>
+
+      <div className="grid grid-cols-12 gap-6">
+        {/* Left: Barcode Lookup */}
+        <section className="col-span-12 lg:col-span-5 flex flex-col gap-6">
+          <div className="p-8 bg-surface-container-low border border-outline-variant">
+            <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-6">Barcode Lookup</h2>
+            <div className="relative mb-2">
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant">search</span>
+              <input
+                type="text"
+                placeholder="Scan or enter barcode..."
+                className="w-full bg-transparent border-b border-outline-variant focus:border-secondary focus:ring-0 pl-8 pr-4 py-2 text-body-md transition-all outline-none placeholder:text-on-surface-variant/40"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && lookupBarcode()}
+                autoFocus
+              />
+            </div>
+
+            {variant ? (
+              <div className="mt-6">
+                <div className="aspect-[4/5] w-32 h-44 bg-surface-container overflow-hidden border border-outline-variant mb-4 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-on-surface-variant opacity-40">checkroom</span>
+                </div>
+                <h3 className="font-headline-sm text-headline-sm text-primary">{variant.sku || 'Product'}</h3>
+                <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">
+                  {variant.barcode}{variant.size ? ` · ${variant.size}` : ''}{variant.color ? ` / ${variant.color}` : ''}
+                </p>
+                <div className="flex items-baseline gap-3 mt-4">
+                  <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">On hand</span>
+                  <span className="font-headline-md text-headline-md text-secondary">{variant.quantity ?? '—'}</span>
+                </div>
+
+                <div className="mt-8 flex items-end gap-3">
+                  <div className="flex-1">
+                    <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">Quantity</label>
+                    <input
+                      type="number" min="1"
+                      className="w-full bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 text-body-lg font-body-lg"
+                      value={quantity}
+                      onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+                  <button onClick={receive} className="px-8 py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 transition-all">
+                    Receive Stock
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-10 text-center font-body-md text-body-md text-on-surface-variant/60">Scan a barcode to look up a product</p>
+            )}
+
+            {msg && <p className="mt-4 text-sm text-secondary">{msg}</p>}
           </div>
-        )}
-        {variant && (
-          <div className="flex gap-2">
-            <input type="number" min="1" className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 p-2 rounded w-24" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} />
-            <button onClick={receive} className="bg-green-600 text-white px-4 rounded hover:bg-green-700">{t('warehouse.receive')}</button>
+        </section>
+
+        {/* Right: Movements */}
+        <section className="col-span-12 lg:col-span-7 bg-surface-container-low border border-outline-variant">
+          <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest px-6 pt-6 pb-4">Recent Movements</h2>
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[640px]">
+              <thead>
+                <tr className="border-t border-outline-variant">
+                  {['Operation', 'Variant', 'Qty', 'Date'].map((h, i) => (
+                    <th key={h} className={`py-3 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest ${i === 3 ? 'text-right' : ''}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/30">
+                {movements.map((m) => (
+                  <tr key={m.id} className="hover:bg-surface-container transition-colors">
+                    <td className="py-4 px-6">
+                      <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-[2px] ${m.quantity > 0 ? 'bg-secondary-container text-on-secondary-container' : 'bg-surface-container-highest text-on-surface-variant'}`}>
+                        {m.operation}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 font-body-md text-body-md text-on-surface">#{m.variant_id}</td>
+                    <td className={`py-4 px-6 font-body-md text-body-md ${m.quantity > 0 ? 'text-secondary' : 'text-error'}`}>
+                      {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
+                    </td>
+                    <td className="py-4 px-6 text-right text-on-surface-variant font-body-md text-body-md">
+                      {new Date(m.created_at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {movements.length === 0 && (
+              <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No movements yet.</div>
+            )}
           </div>
-        )}
-        {msg && <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">{msg}</div>}
-      </div>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-4">
-        <h2 className="font-bold mb-3 dark:text-white">{t('warehouse.recent_movements')}</h2>
-        {movements.map((m) => (
-          <div key={m.id} className="flex justify-between py-2 border-b dark:border-gray-700 text-sm">
-            <span className="dark:text-gray-200">{m.operation}</span>
-            <span className="font-medium dark:text-gray-200">{m.quantity > 0 ? `+${m.quantity}` : m.quantity}</span>
-            <span className="text-gray-500 dark:text-gray-400">{t('dashboard.variant')} #{m.variant_id}</span>
-            <span className="text-gray-500 dark:text-gray-400">{new Date(m.created_at).toLocaleString()}</span>
-          </div>
-        ))}
+        </section>
       </div>
     </div>
   )
