@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from 'react'
+
 const translations = {
   en: {
     'app.name': 'Admin Panel',
@@ -909,6 +911,26 @@ const translations = {
 
 const saved = localStorage.getItem('lang') || 'en'
 let currentLang = saved
+let version = 0
+const listeners = new Set()
+
+function emit() {
+  version++
+  for (const listener of listeners) listener()
+}
+
+function subscribe(listener) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+function getSnapshot() {
+  return version
+}
+
+export function useLangVersion() {
+  return useSyncExternalStore(subscribe, getSnapshot)
+}
 
 export function t(key, params = {}) {
   let val = translations[currentLang]?.[key] || translations.en[key] || key
@@ -922,6 +944,7 @@ export function setLanguage(lang) {
   currentLang = lang
   localStorage.setItem('lang', lang)
   document.documentElement.lang = lang
+  emit()
 }
 
 export function getLanguage() {

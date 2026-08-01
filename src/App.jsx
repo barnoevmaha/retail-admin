@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './context/ToastContext'
+import { useLangVersion } from './i18n'
 import Login from './pages/Login'
 import Layout from './components/Layout'
 
@@ -13,6 +14,7 @@ function ProtectedRoute({ children }) {
 }
 
 export default function App() {
+  useLangVersion()
   return (
     <AuthProvider>
       <ThemeProvider>
