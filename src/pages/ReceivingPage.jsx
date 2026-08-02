@@ -13,7 +13,7 @@ export default function ReceivingPage() {
 
   useEffect(() => {
     api.get('/receiving/').then((r) => setReceivings(r.data)).catch(() => {})
-    api.get('/suppliers/').then((r) => setSuppliers(r.data)).catch(() => {})
+    api.get('/suppliers/').then((r) => setSuppliers(r.data.items)).catch(() => {})
   }, [])
 
   const loadDetail = async (id) => {
