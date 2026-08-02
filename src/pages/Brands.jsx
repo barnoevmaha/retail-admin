@@ -36,8 +36,8 @@ export default function Brands() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-2 gap-6">
         <div>
-          <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase">BRANDS</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Manage curator brand roster and product associations.</p>
+          <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase">{t('brands.title')}</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-2">{t('brands.subtitle')}</p>
         </div>
         <button
           onClick={() => setFormOpen(!formOpen)}
@@ -71,26 +71,26 @@ export default function Brands() {
                 setSlug(e.target.value)
               }}
             />
-            <span className="mt-1 block font-body-sm text-body-sm text-on-surface-variant normal-case tracking-normal">Used in URLs.</span>
+            <span className="mt-1 block font-body-sm text-body-sm text-on-surface-variant normal-case tracking-normal">{t('common.used_in_urls')}</span>
           </label>
           <button
             onClick={add}
             className="px-6 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm text-on-surface hover:border-secondary hover:text-secondary transition-colors duration-300"
           >
-            ADD
+            {t('common.add')}
           </button>
         </div>
       )}
 
       <div className="bg-surface-container-low border border-outline-variant rounded-lg overflow-hidden">
         <div className="grid grid-cols-[100px_1fr_auto] md:grid-cols-[120px_2fr_1fr_auto] gap-4 p-6 border-b border-outline-variant bg-surface-container">
-          <div className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Logo</div>
-          <div className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Brand Name</div>
+          <div className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('brands.logo')}</div>
+          <div className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('brands.name')}</div>
           <div className="hidden md:block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">{t('common.products')}</div>
           <div className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right w-8"></div>
         </div>
         {brands.length === 0 ? (
-          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No brands yet.</div>
+          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">{t('brands.no_yet')}</div>
         ) : (
           brands.map((b) => (
             <div key={b.id} className="grid grid-cols-[100px_1fr_auto] md:grid-cols-[120px_2fr_1fr_auto] gap-4 p-6 items-center border-b border-outline-variant/50 hover:bg-surface-container transition-colors duration-200 group">

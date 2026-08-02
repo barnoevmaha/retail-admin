@@ -37,7 +37,7 @@ export default function Categories() {
       <div className="flex justify-between items-end mb-2">
         <div>
           <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">{t('categories.title')}</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Manage your product categorization hierarchy.</p>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-2">{t('categories.subtitle')}</p>
         </div>
         <button
           onClick={() => setFormOpen(!formOpen)}
@@ -71,13 +71,13 @@ export default function Categories() {
                 setSlug(e.target.value)
               }}
             />
-            <span className="mt-1 block font-body-sm text-body-sm text-on-surface-variant normal-case tracking-normal">Used in URLs.</span>
+            <span className="mt-1 block font-body-sm text-body-sm text-on-surface-variant normal-case tracking-normal">{t('common.used_in_urls')}</span>
           </label>
           <button
             onClick={add}
             className="px-6 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm text-on-surface hover:border-secondary hover:text-secondary transition-colors duration-300"
           >
-            ADD
+            {t('common.add')}
           </button>
         </div>
       )}
@@ -87,11 +87,11 @@ export default function Categories() {
           <thead>
             <tr className="border-b border-outline-variant bg-surface-container">
               <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-12"></th>
-              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-24">Image</th>
-              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Name</th>
-              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Slug</th>
-              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Products</th>
-              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right w-28">Actions</th>
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-24">{t('categories.image')}</th>
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('categories.name')}</th>
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('categories.slug')}</th>
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">{t('common.products')}</th>
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right w-28">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-outline-variant">
@@ -123,7 +123,7 @@ export default function Categories() {
           </tbody>
         </table>
         {cats.length === 0 && (
-          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No categories yet.</div>
+          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">{t('categories.no_yet')}</div>
         )}
       </div>
     </div>
