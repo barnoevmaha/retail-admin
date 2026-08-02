@@ -27,30 +27,30 @@ export default function Products() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest block mb-2">Catalog</span>
+          <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest block mb-2">{t('products.subtitle')}</span>
           <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">{t('products.title')}</h2>
         </div>
         <button className="px-6 py-3 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-primary hover:border-secondary hover:text-secondary transition-all duration-300 w-fit">
-          New Product
+          {t('products.new')}
         </button>
       </div>
 
       <div className="flex flex-wrap items-center gap-4 py-4 border-t border-b border-outline-variant/50">
         <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-high rounded-[4px] border border-outline-variant cursor-pointer hover:border-secondary transition-colors">
-          <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Category:</span>
-          <span className="font-body-md text-body-md text-primary">All</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('products.category_label')}</span>
+          <span className="font-body-md text-body-md text-primary">{t('common.all')}</span>
           <span className="material-symbols-outlined text-on-surface-variant text-sm">expand_more</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-high rounded-[4px] border border-outline-variant cursor-pointer hover:border-secondary transition-colors">
-          <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Status:</span>
-          <span className="font-body-md text-body-md text-primary">Active</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('products.status_label')}</span>
+          <span className="font-body-md text-body-md text-primary">{t('products.active')}</span>
           <span className="material-symbols-outlined text-on-surface-variant text-sm">expand_more</span>
         </div>
         <div className="ml-auto relative group hidden sm:block w-64">
           <span className="material-symbols-outlined absolute left-0 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-secondary transition-colors">search</span>
           <input
             type="text"
-            placeholder="Search by SKU or Name..."
+            placeholder={t("products.search_placeholder")}
             className="w-full bg-transparent border-0 border-b border-outline-variant pl-8 py-1.5 text-primary font-body-md text-body-md focus:ring-0 focus:outline-none focus:border-secondary transition-colors placeholder:text-on-surface-variant"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -63,13 +63,13 @@ export default function Products() {
           <thead>
             <tr className="border-b border-outline-variant/50">
               <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal w-12"><input className="custom-checkbox" type="checkbox" /></th>
-              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal w-20">Item</th>
+              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal w-20">{t('products.item')}</th>
               <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal">{t('products.name')}</th>
-              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal">Category</th>
-              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal">{'Brand'}</th>
-              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-right">{'Price'}</th>
-              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-right">Stock</th>
-              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-center">{'Status'}</th>
+              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal">{t('products.category')}</th>
+              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal">{t('products.brand')}</th>
+              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-right">{t('products.price')}</th>
+              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-right">{t('products.stock')}</th>
+              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-center">{t('common.status')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-outline-variant/30">
@@ -94,9 +94,9 @@ export default function Products() {
                   <td className="py-3 px-4 align-middle font-body-md text-body-md text-primary text-right">{s}</td>
                   <td className="py-3 px-4 align-middle text-center">
                     {s === 0 ? (
-                      <span className="inline-block px-2 py-1 bg-surface-container-highest text-on-surface-variant border border-outline-variant/30 rounded-[4px] font-label-sm text-[10px] uppercase tracking-wider">Out of Stock</span>
+                      <span className="inline-block px-2 py-1 bg-surface-container-highest text-on-surface-variant border border-outline-variant/30 rounded-[4px] font-label-sm text-[10px] uppercase tracking-wider">{t('dashboard.out_of_stock')}</span>
                     ) : (
-                      <span className="inline-block px-2 py-1 bg-surface-container-highest text-secondary border border-secondary/20 rounded-[4px] font-label-sm text-[10px] uppercase tracking-wider">{p.is_active ? 'Active' : 'Inactive'}</span>
+                      <span className="inline-block px-2 py-1 bg-surface-container-highest text-secondary border border-secondary/20 rounded-[4px] font-label-sm text-[10px] uppercase tracking-wider">{p.is_active ? t('products.active') : t('products.inactive')}</span>
                     )}
                   </td>
                 </tr>
@@ -105,12 +105,12 @@ export default function Products() {
           </tbody>
         </table>
         {products.length === 0 && (
-          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No products found.</div>
+          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">{t('products.no_yet')}</div>
         )}
       </div>
 
       <div className="flex items-center justify-between py-4 border-t border-outline-variant/50 mt-auto">
-        <span className="font-body-md text-body-md text-on-surface-variant">Showing {products.length} of {products.length} items</span>
+        <span className="font-body-md text-body-md text-on-surface-variant">{t('products.showing', { shown: products.length, total: products.length })}</span>
         <div className="flex items-center gap-2">
           <button disabled className="w-8 h-8 flex items-center justify-center border border-outline-variant rounded-[4px] text-on-surface-variant disabled:opacity-30 disabled:cursor-not-allowed">
             <span className="material-symbols-outlined text-sm">chevron_left</span>

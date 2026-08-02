@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import api from '../api/client'
+import { t } from '../i18n'
 
 const firstVariant = (p) => {
   const vs = p.variants || []
@@ -49,7 +50,7 @@ export default function POS() {
       setBarcode('')
       setMsg('')
     } catch {
-      setMsg('Variant not found')
+      setMsg(t('pos.not_found'))
     }
   }
 
@@ -89,13 +90,13 @@ export default function POS() {
         headers: { 'X-Customer-Id': customerId || '', 'X-Session-Key': `pos-${Date.now()}` }
       })
       setLastOrderId(r.data.id)
-      setMsg(`Sale complete! Order #${r.data.id}`)
+      setMsg(`${t('pos.sale_complete')} #${r.data.id}`)
       setItems([])
       setCustomer(null)
       setCustomerPhone('')
       inputRef.current?.focus()
     } catch (err) {
-      setMsg('Error: ' + (err.response?.data?.detail || 'Unknown'))
+      setMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
     }
   }
 
@@ -110,14 +111,14 @@ export default function POS() {
         payment_method: paymentMethod,
         total,
       })
-      setMsg('Sale suspended')
+      setMsg(t('pos.suspended'))
       setItems([])
       setCustomer(null)
       setCustomerPhone('')
       loadSuspended()
       inputRef.current?.focus()
     } catch (err) {
-      setMsg('Error suspending: ' + (err.response?.data?.detail || 'Unknown'))
+      setMsg(t('pos.error_suspend', { detail: err.response?.data?.detail || t('common.unknown') }))
     }
   }
 
@@ -141,10 +142,10 @@ export default function POS() {
       setPaymentMethod(session.payment_method)
       setShowSuspended(false)
       loadSuspended()
-      setMsg(`Resumed sale from ${new Date(session.created_at).toLocaleString()}`)
+      setMsg(`${t('pos.resumed')} ${new Date(session.created_at).toLocaleString()}`)
       inputRef.current?.focus()
     } catch (err) {
-      setMsg('Error resuming: ' + (err.response?.data?.detail || 'Unknown'))
+      setMsg(t('pos.error_resume', { detail: err.response?.data?.detail || t('common.unknown') }))
     }
   }
 
@@ -152,14 +153,14 @@ export default function POS() {
     try {
       await api.put(`/pos-sessions/${sessionId}/cancel`)
       loadSuspended()
-      setMsg('Sale cancelled')
+      setMsg(t('pos.cancelled'))
     } catch (err) {
-      setMsg('Error cancelling: ' + (err.response?.data?.detail || 'Unknown'))
+      setMsg(t('pos.error_cancel', { detail: err.response?.data?.detail || t('common.unknown') }))
     }
   }
 
   const reprintReceipt = async () => {
-    if (!lastOrderId) { setMsg('No last order to reprint'); return }
+    if (!lastOrderId) { setMsg(t('pos.no_receipt')); return }
     window.open(`/api/receipts/${lastOrderId}`, '_blank')
   }
 
@@ -188,7 +189,7 @@ export default function POS() {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Search product or SKU... (Enter to add)"
+              placeholder={t('pos.scan_placeholder')}
               className="w-full bg-transparent border-b border-outline-variant py-2 pl-8 focus:outline-none focus:border-secondary transition-all font-body-md text-body-md placeholder:text-on-surface-variant/40"
               value={barcode}
               onChange={(e) => setBarcode(e.target.value)}
@@ -201,7 +202,7 @@ export default function POS() {
               className="flex items-center gap-2 bg-surface-container-high px-4 py-2 rounded-[4px] border border-outline-variant hover:bg-surface-container-highest transition-colors"
             >
               <span className="material-symbols-outlined text-secondary">barcode_scanner</span>
-              <span className="font-label-sm text-label-sm uppercase tracking-wider">Scan Barcode</span>
+              <span className="font-label-sm text-label-sm uppercase tracking-wider">{t('pos.scan_heading')}</span>
             </button>
             <div className="flex gap-2 font-label-sm text-label-sm">
               <span className="text-secondary">EN</span>
@@ -224,7 +225,7 @@ export default function POS() {
                   : 'bg-surface-container-high border border-outline-variant text-on-surface-variant hover:border-secondary'
               }`}
             >
-              {c === 'All' ? 'All Items' : c}
+              {c === 'All' ? t('pos.all_items') : c}
             </button>
           ))}
         </div>
@@ -251,7 +252,7 @@ export default function POS() {
                           onClick={(e) => { e.stopPropagation(); addVariant(v, p.name) }}
                         >
                           <span className="material-symbols-outlined">add</span>
-                          Add
+                          {t('common.add')}
                         </button>
                       </div>
                     )}
@@ -265,7 +266,7 @@ export default function POS() {
             })}
           </div>
           {shownProducts.length === 0 && (
-            <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No products found.</div>
+            <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">{t('pos.no_products')}</div>
           )}
         </div>
       </section>
@@ -274,8 +275,8 @@ export default function POS() {
       <section className="w-full md:w-5/12 flex flex-col bg-surface-container-low border border-outline-variant">
         <div className="p-6 border-b border-outline-variant flex justify-between items-center">
           <div>
-            <h2 className="font-headline-sm text-headline-sm text-on-surface">Current Order</h2>
-            <p className="font-label-sm text-label-sm text-on-surface-variant tracking-wider">{items.length} items</p>
+            <h2 className="font-headline-sm text-headline-sm text-on-surface">{t('pos.current_order')}</h2>
+            <p className="font-label-sm text-label-sm text-on-surface-variant tracking-wider">{items.length} {t('common.items')}</p>
           </div>
           <button onClick={clearCart} className="w-10 h-10 flex items-center justify-center border border-outline-variant hover:bg-surface-container-high transition-colors text-on-surface-variant">
             <span className="material-symbols-outlined">delete_sweep</span>
@@ -314,26 +315,26 @@ export default function POS() {
             </div>
           ))}
           {items.length === 0 && (
-            <div className="py-12 text-center font-body-md text-body-md text-on-surface-variant">No items in receipt</div>
+            <div className="py-12 text-center font-body-md text-body-md text-on-surface-variant">{t('pos.no_items')}</div>
           )}
         </div>
 
         {showSuspended && (
           <div className="p-4 border-t border-outline-variant bg-surface-container space-y-2 max-h-48 overflow-y-auto">
-            <h3 className="font-label-sm text-label-sm text-on-surface uppercase tracking-widest mb-2">Suspended Sales</h3>
+            <h3 className="font-label-sm text-label-sm text-on-surface uppercase tracking-widest mb-2">{t('pos.suspended_sales')}</h3>
             {suspendedSessions.length === 0 ? (
-              <div className="text-on-surface-variant text-sm text-center py-2">No suspended sales</div>
+              <div className="text-on-surface-variant text-sm text-center py-2">{t('pos.no_suspended')}</div>
             ) : (
               suspendedSessions.map((s) => (
                 <div key={s.id} className="flex justify-between items-center py-1 border-b border-outline-variant/30 text-sm">
                   <div className="min-w-0">
                     <span className="text-on-surface-variant text-xs">{new Date(s.created_at).toLocaleString()}</span>
                     <span className="ml-2 font-bold text-on-surface">${s.total.toFixed(2)}</span>
-                    <span className="ml-2 text-on-surface-variant text-xs truncate">{s.customer_name || 'Walk-in'}</span>
+                    <span className="ml-2 text-on-surface-variant text-xs truncate">{s.customer_name || t('pos.walk_in')}</span>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <button onClick={() => resumeSale(s)} className="px-2 py-1 border border-secondary/40 text-secondary text-xs hover:bg-secondary hover:text-on-secondary transition-colors">Resume</button>
-                    <button onClick={() => cancelSale(s.id)} className="px-2 py-1 border border-error/40 text-error text-xs hover:bg-error hover:text-on-error transition-colors">Cancel</button>
+                    <button onClick={() => resumeSale(s)} className="px-2 py-1 border border-secondary/40 text-secondary text-xs hover:bg-secondary hover:text-on-secondary transition-colors">{t('pos.resume')}</button>
+                    <button onClick={() => cancelSale(s.id)} className="px-2 py-1 border border-error/40 text-error text-xs hover:bg-error hover:text-on-error transition-colors">{t('common.cancel')}</button>
                   </div>
                 </div>
               ))
@@ -347,7 +348,7 @@ export default function POS() {
             <span className="material-symbols-outlined absolute left-0 top-1/2 -translate-y-1/2 text-on-surface-variant">person_search</span>
             <input
               type="text"
-              placeholder="Add customer to order... (phone)"
+              placeholder={t('pos.phone_placeholder')}
               className="w-full bg-transparent border-b border-outline-variant py-2 pl-8 focus:outline-none focus:border-secondary transition-all font-body-md text-body-md placeholder:text-on-surface-variant/40"
               value={customerPhone}
               onChange={(e) => setCustomerPhone(e.target.value)}
@@ -360,36 +361,36 @@ export default function POS() {
             {['cash', 'card', 'bank_transfer'].map((m) => (
               <label key={m} className={`flex-1 text-center px-2 py-2 border font-label-sm text-label-sm uppercase tracking-widest cursor-pointer transition-colors ${paymentMethod === m ? 'border-secondary text-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary'}`}>
                 <input type="radio" name="payment" value={m} checked={paymentMethod === m} onChange={(e) => setPaymentMethod(e.target.value)} className="hidden" />
-                {m.replace('_', ' ')}
+                {t('pos.payment_' + m)}
               </label>
             ))}
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between text-on-surface-variant font-body-md text-body-md">
-              <span>Subtotal</span>
+              <span>{t('pos.subtotal')}</span>
               <span>${total.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-on-surface font-headline-sm text-headline-sm pt-2 border-t border-outline-variant">
-              <span>Total</span>
+              <span>{t('pos.total')}</span>
               <span className="text-secondary">${total.toFixed(2)}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <button onClick={toggleSuspended} className="py-3 border border-outline-variant text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest hover:border-secondary transition-all">
-              {showSuspended ? 'Hide' : `Hold (${suspendedSessions.length})`}
+              {showSuspended ? t('pos.hide') : t('pos.hold', { count: suspendedSessions.length })}
             </button>
             <button onClick={suspendSale} className="py-3 border border-outline-variant text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest hover:border-secondary transition-all">
-              Suspend
+              {t('pos.suspend')}
             </button>
           </div>
           <button onClick={reprintReceipt} className="w-full py-3 border border-outline-variant text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest hover:border-secondary transition-all">
-            Reprint Receipt
+            {t('pos.reprint')}
           </button>
           <button onClick={completeSale} className="w-full bg-secondary text-on-secondary py-5 font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-3">
             <span className="material-symbols-outlined">payments</span>
-            Charge ${total.toFixed(2)}
+            {t('pos.charge', { total: `$${total.toFixed(2)}` })}
           </button>
         </div>
       </section>

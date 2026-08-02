@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
+import { t } from '../i18n'
 import PasswordInput from '../components/PasswordInput'
 
 export default function ChangePassword() {
@@ -22,7 +23,7 @@ export default function ChangePassword() {
       setMessage('success')
     } catch (err) {
       const detail = err.response?.data?.detail
-      setErrors({ form: typeof detail === 'string' ? detail : 'Something went wrong' })
+      setErrors({ form: typeof detail === 'string' ? detail : t('change_password.generic_error') })
     } finally {
       setSaving(false)
     }
@@ -32,15 +33,15 @@ export default function ChangePassword() {
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
-          Change Password
+          {t('change_password.title')}
         </h1>
-        <p className="font-body-md text-body-md text-on-surface-variant mt-2">Update your account password.</p>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-2">{t('change_password.subtitle')}</p>
       </header>
 
       <div className="p-8 bg-surface-container-low border border-outline-variant max-w-xl">
         {message === 'success' && (
           <div className="bg-secondary-container/30 border border-secondary-container text-on-secondary-container p-3 mb-6 font-body-md text-body-md">
-            Password changed successfully.
+            {t('change_password.success')}
           </div>
         )}
         {errors.form && (
@@ -51,27 +52,27 @@ export default function ChangePassword() {
         <form onSubmit={handleSubmit}>
           <div className="space-y-6">
             <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">Current Password</label>
+              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{t('change_password.current')}</label>
               <PasswordInput
                 value={form.current_password}
                 onChange={set('current_password')}
-                placeholder="Enter current password"
+                placeholder={t("change_password.current_placeholder")}
               />
             </div>
             <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">New Password</label>
+              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{t('change_password.new')}</label>
               <PasswordInput
                 value={form.new_password}
                 onChange={set('new_password')}
-                placeholder="Enter new password"
+                placeholder={t("change_password.new_placeholder")}
               />
             </div>
             <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">Confirm New Password</label>
+              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{t('change_password.confirm')}</label>
               <PasswordInput
                 value={form.confirm_password}
                 onChange={set('confirm_password')}
-                placeholder="Repeat new password"
+                placeholder={t("change_password.repeat")}
               />
             </div>
           </div>
@@ -81,14 +82,14 @@ export default function ChangePassword() {
               onClick={() => navigate('/settings')}
               className="px-8 py-3 border border-outline-variant text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest hover:border-secondary hover:text-secondary transition-all duration-300"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="px-8 py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-50"
             >
-              {saving ? 'Saving...' : 'Save Password'}
+              {saving ? t('change_password.saving') : t('change_password.save')}
             </button>
           </div>
         </form>

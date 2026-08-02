@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { t } from '../i18n'
 
 const CHANNELS = ['sms', 'email', 'telegram', 'push']
 
@@ -26,7 +27,7 @@ export default function NotificationsPage() {
       setTitle('')
       fetch()
     } catch (err) {
-      alert('Error: ' + (err.response?.data?.detail || 'Unknown'))
+      alert(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
     }
   }
 
@@ -43,19 +44,19 @@ export default function NotificationsPage() {
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
-          Notifications
+          {t('notifications.title')}
         </h1>
-        <p className="font-body-md text-body-md text-on-surface-variant mt-2">Send messages to customers and staff across channels.</p>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-2">{t('notifications.subtitle')}</p>
       </header>
 
       <div className="grid grid-cols-12 gap-6">
         {/* Left: Send */}
         <section className="col-span-12 lg:col-span-5">
           <div className="p-8 bg-surface-container-low border border-outline-variant">
-            <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-6">Send Notification</h2>
+            <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-6">{t('notifications.send')}</h2>
             <div className="space-y-6">
               <div>
-                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-3">Channel</label>
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-3">{t('notifications.channel')}</label>
                 <div className="grid grid-cols-4 gap-2">
                   {CHANNELS.map((c) => (
                     <button
@@ -74,27 +75,27 @@ export default function NotificationsPage() {
                 </div>
               </div>
               <div>
-                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">Recipient</label>
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{t('notifications.recipient')}</label>
                 <input
-                  type="text" placeholder="Phone, email or chat ID"
+                  type="text" placeholder={t("notifications.recipient_placeholder")}
                   className="w-full bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 text-body-md placeholder:text-on-surface-variant/40"
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
                 />
               </div>
               <div>
-                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">Title</label>
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{t('notifications.title_label')}</label>
                 <input
-                  type="text" placeholder="Optional"
+                  type="text" placeholder={t("common.optional")}
                   className="w-full bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 text-body-md placeholder:text-on-surface-variant/40"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                 />
               </div>
               <div>
-                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">Message</label>
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{t('notifications.message')}</label>
                 <textarea
-                  rows="3" placeholder="Message content..."
+                  rows="3" placeholder={t("notifications.message_placeholder")}
                   className="w-full bg-transparent border border-outline-variant focus:border-secondary outline-none p-3 text-body-md resize-none placeholder:text-on-surface-variant/40"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -102,7 +103,7 @@ export default function NotificationsPage() {
               </div>
               <button onClick={send} className="w-full py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined">send</span>
-                Send
+                {t('notifications.send_btn')}
               </button>
             </div>
           </div>
@@ -112,13 +113,13 @@ export default function NotificationsPage() {
         <section className="col-span-12 lg:col-span-7">
           <div className="p-8 bg-surface-container-low border border-outline-variant">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Sent Notifications</h2>
+              <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">{t('notifications.sent')}</h2>
               <div className="flex gap-1 p-1 bg-surface-container rounded-[4px]">
                 <button
                   onClick={() => setChannel('')}
                   className={`px-3 py-1 text-label-sm text-sm rounded-[4px] transition-colors ${!channel ? 'bg-secondary text-on-secondary' : 'text-on-surface-variant hover:text-primary'}`}
                 >
-                  All
+                  {t('notifications.all')}
                 </button>
                 {CHANNELS.map((c) => (
                   <button
@@ -145,7 +146,7 @@ export default function NotificationsPage() {
                             ? 'bg-secondary-container text-on-secondary-container'
                             : 'bg-error-container text-on-error-container'
                         }`}>
-                          {n.status}
+                          {t('status.' + n.status)}
                         </span>
                       </div>
                       <p className="font-label-sm text-label-sm text-on-surface-variant mt-2">{n.recipient}</p>
@@ -158,14 +159,14 @@ export default function NotificationsPage() {
                         onClick={() => markRead(n.id)}
                         className="shrink-0 px-4 py-2 border border-outline-variant text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest hover:border-secondary hover:text-secondary transition-all"
                       >
-                        Mark Read
+                        {t('notifications.mark_read')}
                       </button>
                     )}
                   </div>
                 </div>
               ))}
               {notifications.length === 0 && (
-                <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant/60">No notifications sent yet.</div>
+                <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant/60">{t('notifications.no_yet')}</div>
               )}
             </div>
           </div>

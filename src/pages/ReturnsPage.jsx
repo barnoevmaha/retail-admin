@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { t } from '../i18n'
 
 export default function ReturnsPage() {
   const [returns, setReturns] = useState([])
@@ -35,7 +36,7 @@ export default function ReturnsPage() {
       loadDetail(r.data.id)
       api.get('/returns/').then((res) => setReturns(res.data))
     } catch (err) {
-      setMsg('Error: ' + (err.response?.data?.detail || 'Unknown'))
+      setMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
     }
   }
 
@@ -46,11 +47,11 @@ export default function ReturnsPage() {
       await api.post(`/returns/${activeId}/items`, { variant_id: v.data.id, quantity: itemQty })
       setVariantBarcode('')
       setItemQty(1)
-      setMsg(`Added ${itemQty} x ${v.data.barcode}`)
+      setMsg(t('common.added_msg', { qty: itemQty, barcode: v.data.barcode }))
       loadDetail(activeId)
     } catch (err) {
       setMsg(err.response?.status === 404
-        ? 'Variant not found'
+        ? t('common.not_found')
         : 'Error: ' + (err.response?.data?.detail || 'Unknown'))
     }
   }
@@ -59,7 +60,7 @@ export default function ReturnsPage() {
     if (!activeId) return
     try {
       const r = await api.post(`/returns/${activeId}/confirm`)
-      setMsg(`Confirmed #${r.data.id} — ${r.data.total_quantity} items`)
+      setMsg(t('common.confirmed_msg', { id: r.data.id, count: r.data.total_quantity }))
       loadDetail(activeId)
       api.get('/returns/').then((res) => setReturns(res.data))
     } catch (err) {
@@ -71,7 +72,7 @@ export default function ReturnsPage() {
     if (!activeId) return
     try {
       await api.post(`/returns/${activeId}/cancel`)
-      setMsg('Return cancelled')
+      setMsg(t('returns.cancelled'))
       loadDetail(activeId)
       api.get('/returns/').then((res) => setReturns(res.data))
     } catch (err) {
@@ -83,25 +84,25 @@ export default function ReturnsPage() {
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
-          Returns
+          {t('returns.title')}
         </h1>
-        <p className="font-body-md text-body-md text-on-surface-variant mt-2">Process customer returns and restock inventory.</p>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-2">{t('returns.subtitle')}</p>
       </header>
 
       <div className="grid grid-cols-12 gap-6">
         {/* Left: Create + list */}
         <section className="col-span-12 lg:col-span-5 flex flex-col gap-6">
           <div className="p-8 bg-surface-container-low border border-outline-variant">
-            <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-6">Create Return</h2>
+            <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-6">{t('returns.create')}</h2>
             <div className="space-y-5">
               <div>
-                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">Order</label>
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{t('returns.order')}</label>
                 <select
                   className="w-full bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 text-body-md text-on-surface cursor-pointer"
                   value={orderId}
                   onChange={(e) => setOrderId(e.target.value)}
                 >
-                  <option value="" className="bg-surface-container">Select order...</option>
+                  <option value="" className="bg-surface-container">{t('returns.select_order_placeholder')}</option>
                   {orders.map((o) => (
                     <option key={o.id} value={o.id} className="bg-surface-container">
                       #{o.id} — ${parseFloat(o.total_amount).toFixed(2)}
@@ -110,22 +111,22 @@ export default function ReturnsPage() {
                 </select>
               </div>
               <div>
-                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">Reason</label>
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{t('returns.reason')}</label>
                 <input
-                  type="text" placeholder="e.g. Damaged item, wrong size"
+                  type="text" placeholder={t("returns.reason_placeholder")}
                   className="w-full bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 text-body-md placeholder:text-on-surface-variant/40"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                 />
               </div>
               <button onClick={createReturn} className="w-full py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 active:scale-[0.99] transition-all">
-                Create Return
+                {t('returns.create')}
               </button>
             </div>
           </div>
 
           <div className="p-8 bg-surface-container-low border border-outline-variant">
-            <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-6">Returns</h2>
+            <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-6">{t('returns.title')}</h2>
             {returns.map((r) => (
               <div
                 key={r.id}
@@ -136,7 +137,7 @@ export default function ReturnsPage() {
               >
                 <div className="min-w-0">
                   <span className="font-body-md text-body-md text-primary font-medium">#{r.id}</span>
-                  <span className="font-body-md text-body-md text-on-surface-variant ml-2">Order #{r.order_id}</span>
+                  <span className="font-body-md text-body-md text-on-surface-variant ml-2">{t('returns.order')} #{r.order_id}</span>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-[2px] ${
@@ -146,14 +147,14 @@ export default function ReturnsPage() {
                         ? 'bg-error-container text-on-error-container'
                         : 'bg-surface-container-highest text-on-surface-variant'
                   }`}>
-                    {r.status}
+                    {t('status.' + r.status)}
                   </span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">{r.items_count} items</span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant">{r.items_count} {t('common.items')}</span>
                 </div>
               </div>
             ))}
             {returns.length === 0 && (
-              <div className="py-8 text-center font-body-md text-body-md text-on-surface-variant/60">No returns yet.</div>
+              <div className="py-8 text-center font-body-md text-body-md text-on-surface-variant/60">{t('returns.no_yet')}</div>
             )}
           </div>
         </section>
@@ -165,9 +166,9 @@ export default function ReturnsPage() {
               <div className="p-8 bg-surface-container-low border border-outline-variant">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
                   <div>
-                    <h2 className="font-headline-sm text-headline-sm text-primary uppercase tracking-wide">Return #{detail.id}</h2>
+                    <h2 className="font-headline-sm text-headline-sm text-primary uppercase tracking-wide">{t('returns.return')} #{detail.id}</h2>
                     <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                      Order #{detail.order_id}{detail.reason ? ` · ${detail.reason}` : ''}
+                      {t('returns.order')} #{detail.order_id}{detail.reason ? ` · ${detail.reason}` : ''}
                     </p>
                   </div>
                   <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-[2px] ${
@@ -177,14 +178,14 @@ export default function ReturnsPage() {
                         ? 'bg-error-container text-on-error-container'
                         : 'bg-surface-container-highest text-on-surface-variant'
                   }`}>
-                    {detail.status}
+                    {t('status.' + detail.status)}
                   </span>
                 </div>
 
                 {detail.status === 'draft' && (
                   <div className="flex gap-3">
                     <input
-                      type="text" placeholder="Scan barcode to add item..."
+                      type="text" placeholder={t("common.scan_item")}
                       className="flex-1 bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 text-body-md placeholder:text-on-surface-variant/40"
                       value={variantBarcode}
                       onChange={(e) => setVariantBarcode(e.target.value)}
@@ -199,7 +200,7 @@ export default function ReturnsPage() {
                     />
                     <button onClick={addItem} className="px-6 py-2 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 transition-all flex items-center gap-2">
                       <span className="material-symbols-outlined">add</span>
-                      Add
+                      {t('common.add')}
                     </button>
                   </div>
                 )}
@@ -207,12 +208,12 @@ export default function ReturnsPage() {
               </div>
 
               <div className="bg-surface-container-low border border-outline-variant">
-                <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest px-6 pt-6 pb-4">Items</h2>
+                <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest px-6 pt-6 pb-4">{t('common.items_cap')}</h2>
                 <div className="w-full overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[520px]">
                     <thead>
                       <tr className="border-t border-outline-variant">
-                        {['Product', 'Qty', 'Unit Price', 'Total'].map((h, i) => (
+                        {[t('common.product'), t('common.qty'), t('common.unit_price'), t('common.total')].map((h, i) => (
                           <th key={h} className={`py-3 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest ${i >= 2 ? 'text-right' : ''}`}>{h}</th>
                         ))}
                       </tr>
@@ -229,7 +230,7 @@ export default function ReturnsPage() {
                     </tbody>
                   </table>
                   {detail.items.length === 0 && (
-                    <div className="py-12 text-center font-body-md text-body-md text-on-surface-variant/60">No items yet — scan a barcode above.</div>
+                    <div className="py-12 text-center font-body-md text-body-md text-on-surface-variant/60">{t('common.scan_hint')}</div>
                   )}
                 </div>
               </div>
@@ -238,11 +239,11 @@ export default function ReturnsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   {detail.items.length > 0 && (
                     <button onClick={confirmReturn} className="py-4 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 active:scale-[0.99] transition-all">
-                      Confirm Return
+                      {t('returns.confirm_btn')}
                     </button>
                   )}
                   <button onClick={cancel} className="py-4 border border-error/50 text-error font-label-sm text-label-sm uppercase tracking-widest hover:bg-error-container/20 transition-all">
-                    Cancel Return
+                    {t('returns.cancel_btn')}
                   </button>
                 </div>
               )}
@@ -250,7 +251,7 @@ export default function ReturnsPage() {
           ) : (
             <div className="flex-1 p-16 border border-dashed border-outline-variant flex flex-col items-center justify-center text-center gap-4">
               <span className="material-symbols-outlined text-on-surface-variant/40 text-5xl">assignment_return</span>
-              <p className="font-body-md text-body-md text-on-surface-variant/60">Select a return or create a new one.</p>
+              <p className="font-body-md text-body-md text-on-surface-variant/60">{t('returns.select_hint')}</p>
             </div>
           )}
         </section>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { t } from '../i18n'
 
 function BarChart({ data }) {
   const max = Math.max(...data.map((d) => d.revenue), 1)
@@ -75,34 +76,34 @@ export default function Analytics() {
   }, [])
 
   if (!data || !extended) {
-    return <div className="py-24 text-center font-body-md text-body-md text-on-surface-variant">{'Loading analytics...'}</div>
+    return <div className="py-24 text-center font-body-md text-body-md text-on-surface-variant">{t('common.loading')}</div>
   }
 
   return (
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
-          Analytics
+          {t('analytics.title')}
         </h1>
-        <p className="font-body-md text-body-md text-on-surface-variant mt-2">Performance overview across revenue, products, and customers.</p>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-2">{t('analytics.subtitle')}</p>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard icon="payments" label="Total Revenue" value={`$${data.total_revenue.toLocaleString()}`} />
-        <StatCard icon="trending_up" label="Total Profit" value={`$${data.total_profit.toLocaleString()}`} sub={`${data.profit_margin}% margin`} />
-        <StatCard icon="receipt_long" label="Total Orders" value={data.total_orders.toLocaleString()} sub={`${data.total_customers} customers`} />
-        <StatCard icon="inventory_2" label="Low Stock Items" value={data.low_stock} />
+        <StatCard icon="payments" label={t('analytics.total_revenue')} value={`$${data.total_revenue.toLocaleString()}`} />
+        <StatCard icon="trending_up" label={t('analytics.total_profit')} value={`$${data.total_profit.toLocaleString()}`} sub={t('analytics.margin', { margin: data.profit_margin })} />
+        <StatCard icon="receipt_long" label={t('analytics.total_orders')} value={data.total_orders.toLocaleString()} sub={t('analytics.customers', { count: data.total_customers })} />
+        <StatCard icon="inventory_2" label={t('analytics.low_stock_items')} value={data.low_stock} />
       </div>
 
       <div className="bg-surface-container-low border border-outline-variant p-6 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Daily Sales</h2>
+          <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">{t('analytics.daily_sales')}</h2>
           <span className="font-body-md text-body-md text-on-surface-variant">
-            {extended.daily_sales.reduce((s, d) => s + d.revenue, 0).toLocaleString()} items sold
+            {t('analytics.items_sold', { count: extended.daily_sales.reduce((s, d) => s + d.revenue, 0).toLocaleString() })}
           </span>
         </div>
         {extended.daily_sales.length === 0 ? (
-          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant/60">No sales data yet.</div>
+          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant/60">{t('analytics.no_data_yet')}</div>
         ) : (
           <BarChart data={extended.daily_sales} />
         )}
@@ -110,34 +111,34 @@ export default function Analytics() {
 
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 md:col-span-6 xl:col-span-3">
-          <SimpleTable title="Sales by Category" rows={extended.sales_by_category.map((c) => [c.name, `${c.qty} sold · $${c.revenue.toLocaleString()}`])} />
+          <SimpleTable title={t("analytics.sales_by_category")} rows={extended.sales_by_category.map((c) => [c.name, t("analytics.sold", { qty: c.qty, revenue: `$${c.revenue.toLocaleString()}` })])} />
         </div>
         <div className="col-span-12 md:col-span-6 xl:col-span-3">
-          <SimpleTable title="Sales by Brand" rows={extended.sales_by_brand.map((b) => [b.name, `${b.qty} sold · $${b.revenue.toLocaleString()}`])} />
+          <SimpleTable title={t("analytics.sales_by_brand")} rows={extended.sales_by_brand.map((b) => [b.name, t("analytics.sold", { qty: b.qty, revenue: `$${b.revenue.toLocaleString()}` })])} />
         </div>
         <div className="col-span-12 md:col-span-6 xl:col-span-3">
-          <SimpleTable title="Sales by Size" rows={extended.sales_by_size.map((s) => [s.name, `${s.qty} sold · $${s.revenue.toLocaleString()}`])} />
+          <SimpleTable title={t("analytics.sales_by_size")} rows={extended.sales_by_size.map((s) => [s.name, t("analytics.sold", { qty: s.qty, revenue: `$${s.revenue.toLocaleString()}` })])} />
         </div>
         <div className="col-span-12 md:col-span-6 xl:col-span-3">
-          <SimpleTable title="Sales by Color" rows={extended.sales_by_color.map((c) => [c.name, `${c.qty} sold · $${c.revenue.toLocaleString()}`])} />
+          <SimpleTable title={t("analytics.sales_by_color")} rows={extended.sales_by_color.map((c) => [c.name, t("analytics.sold", { qty: c.qty, revenue: `$${c.revenue.toLocaleString()}` })])} />
         </div>
 
         <div className="col-span-12 md:col-span-6">
-          <SimpleTable title="Monthly Sales" rows={extended.monthly_sales.map((m) => [m.month, `${m.qty} items · $${m.revenue.toLocaleString()}`, 'text-secondary'])} rightAlign />
+          <SimpleTable title={t("analytics.monthly_sales")} rows={extended.monthly_sales.map((m) => [m.month, t("analytics.monthly_row", { qty: m.qty, revenue: `$${m.revenue.toLocaleString()}` }), 'text-secondary'])} rightAlign />
         </div>
         <div className="col-span-12 md:col-span-6">
-          <SimpleTable title="Top Products" rows={data.top_products.map((p) => [`${p.name}`, `${p.sold} sold · $${p.profit.toLocaleString()} profit`, 'text-secondary'])} rightAlign />
+          <SimpleTable title={t("analytics.top_products")} rows={data.top_products.map((p) => [`${p.name}`, t("analytics.sold_profit", { sold: p.sold, profit: `$${p.profit.toLocaleString()}` }), 'text-secondary'])} rightAlign />
         </div>
 
         <div className="col-span-12 md:col-span-6">
-          <SimpleTable title="Best Customers" rows={data.best_customers.map((c) => [c.name, `$${c.spent.toLocaleString()}`])} rightAlign />
+          <SimpleTable title={t("analytics.best_customers")} rows={data.best_customers.map((c) => [c.name, `$${c.spent.toLocaleString()}`])} rightAlign />
         </div>
         <div className="col-span-12 md:col-span-6">
-          <SimpleTable title="Popular Categories" rows={data.popular_categories.map((c) => [c.name, `${c.count} products`])} rightAlign />
+          <SimpleTable title={t("analytics.popular_categories")} rows={data.popular_categories.map((c) => [c.name, t("analytics.count_products", { count: c.count })])} rightAlign />
         </div>
 
         <div className="col-span-12">
-          <SimpleTable title="Products with No Sales" rows={extended.products_no_sales.map((p) => [p.name])} empty="All products have sales." />
+          <SimpleTable title={t("analytics.products_no_sales")} rows={extended.products_no_sales.map((p) => [p.name])} empty={t("analytics.all_products_sold")} />
         </div>
       </div>
     </div>

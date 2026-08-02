@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { t } from '../i18n'
 
 const FIELDS = [
   ['name', 'Company Name'],
@@ -23,10 +24,10 @@ export default function CompanyPage() {
   const save = async () => {
     try {
       await api.put('/company', form)
-      setMsg('Saved!')
+      setMsg(t('common.success'))
       setTimeout(() => setMsg(''), 2000)
     } catch (err) {
-      setMsg('Error: ' + (err.response?.data?.detail || 'Unknown'))
+      setMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
     }
   }
 
@@ -34,13 +35,13 @@ export default function CompanyPage() {
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
-          Company
+          {t('company.title')}
         </h1>
-        <p className="font-body-md text-body-md text-on-surface-variant mt-2">Company details shown on receipts and documents.</p>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-2">{t('company.subtitle')}</p>
       </header>
 
       <div className="p-8 bg-surface-container-low border border-outline-variant max-w-2xl">
-        <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-8">Company Details</h2>
+        <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-8">{t('company.details')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-6">
           {FIELDS.map(([key, label]) => (
             <div key={key}>
@@ -54,9 +55,9 @@ export default function CompanyPage() {
             </div>
           ))}
         </div>
-        <p className="font-label-sm text-label-sm text-on-surface-variant/50 mb-8">These details appear on printed receipts and generated documents.</p>
+        <p className="font-label-sm text-label-sm text-on-surface-variant/50 mb-8">{t('company.receipt_hint')}</p>
         <button onClick={save} className="px-8 py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 active:scale-[0.99] transition-all">
-          Save
+          {t('company.save')}
         </button>
         {msg && <span className="ml-4 text-sm text-secondary">{msg}</span>}
       </div>

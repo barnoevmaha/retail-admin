@@ -42,17 +42,17 @@ export default function Orders() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">{t('orders.title')}</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Manage and curate your global transaction flow.</p>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-2">{t('orders.subtitle')}</p>
         </div>
         <button className="flex items-center gap-2 px-6 py-2 border border-outline-variant hover:border-secondary hover:text-secondary transition-all duration-300 font-label-sm text-label-sm uppercase tracking-widest w-fit">
           <span className="material-symbols-outlined">ios_share</span>
-          Export
+          {t('orders.export')}
         </button>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-6 py-4 border-y border-outline-variant">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-label-sm text-on-surface-variant mr-2 uppercase tracking-tighter">Filter by</span>
+          <span className="text-label-sm text-on-surface-variant mr-2 uppercase tracking-tighter">{t('orders.filter_by')}</span>
           <div className="flex gap-1 p-1 bg-surface-container rounded-[4px]">
             {['all', 'pending', 'paid', 'shipped'].map((f) => (
               <button
@@ -62,7 +62,7 @@ export default function Orders() {
                   filter === f ? 'bg-secondary text-on-secondary' : 'text-on-surface-variant hover:text-primary'
                 }`}
               >
-                {f === 'all' ? 'All' : f === 'paid' ? 'Paid' : f === 'shipped' ? 'Shipped' : 'Pending'}
+                {f === 'all' ? t('common.all') : t('status.' + f)}
               </button>
             ))}
           </div>
@@ -71,7 +71,7 @@ export default function Orders() {
           <span className="absolute left-0 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant">search</span>
           <input
             type="text"
-            placeholder="Search orders, customers..."
+            placeholder={t("orders.search_placeholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-transparent border-b border-outline-variant focus:border-secondary focus:ring-0 pl-8 pr-4 py-2 text-body-md transition-all outline-none placeholder:text-on-surface-variant/40"
@@ -83,7 +83,7 @@ export default function Orders() {
         <table className="w-full text-left border-collapse min-w-[900px]">
           <thead>
             <tr className="border-b border-outline-variant">
-              {['Order #', t('orders.date'), 'Customer', 'Items', t('orders.payment'), t('orders.status'), 'Total'].map((h, i) => (
+              {[t('orders.order_no'), t('orders.date'), t('orders.customer'), t('common.items_cap'), t('orders.payment'), t('orders.status'), t('common.total')].map((h, i) => (
                 <th key={h} className={`pb-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest px-4 ${i === 6 ? 'text-right' : ''}`}>
                   {h}
                 </th>
@@ -99,21 +99,21 @@ export default function Orders() {
                 <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">
                   {new Date(o.created_at).toLocaleDateString()}
                 </td>
-                <td className="py-5 px-4 text-on-surface font-body-md text-body-md">{o.customer_name || 'Walk-in'}</td>
+                <td className="py-5 px-4 text-on-surface font-body-md text-body-md">{o.customer_name || t('orders.walk_in')}</td>
                 <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">{o.items_count ?? '—'}</td>
                 <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">{o.payment_method || '—'}</td>
                 <td className="py-5 px-4">
                   <div className="flex items-center gap-2">
                     <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-[2px] ${statusBadge(o.status)}`}>
-                      {o.status}
+                      {t('status.' + o.status)}
                     </span>
                     <select
                       className="bg-surface-container-high border border-outline-variant text-label-sm text-on-surface rounded-[2px] px-1 py-0.5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer outline-none"
                       value={o.status}
                       onChange={(e) => updateStatus(o.id, e.target.value)}
-                      title="Update status"
+                      title={t("orders.update_status")}
                     >
-                      {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
+                      {statuses.map((s) => <option key={s} value={s}>{t('status.' + s)}</option>)}
                     </select>
                   </div>
                 </td>
@@ -125,12 +125,12 @@ export default function Orders() {
           </tbody>
         </table>
         {visible.length === 0 && (
-          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No orders found.</div>
+          <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">{t('orders.no_yet')}</div>
         )}
       </div>
 
       <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 py-6 border-t border-outline-variant">
-        <span className="text-label-sm text-on-surface-variant">Showing {visible.length} of {orders.length} items</span>
+        <span className="text-label-sm text-on-surface-variant">{t('orders.showing', { shown: visible.length, total: orders.length })}</span>
         <div className="flex items-center gap-2">
           <button className="w-10 h-10 flex items-center justify-center border border-outline-variant hover:border-secondary hover:text-secondary transition-colors">
             <span className="material-symbols-outlined">chevron_left</span>

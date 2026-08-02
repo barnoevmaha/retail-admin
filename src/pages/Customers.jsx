@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { t } from '../i18n'
 
 export default function Customers() {
   const [customers, setCustomers] = useState([])
@@ -26,9 +27,9 @@ export default function Customers() {
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
-          Customers
+          {t('customers.title')}
         </h1>
-        <p className="font-body-md text-body-md text-on-surface-variant mt-2">Manage your customer base, verification, and loyalty.</p>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-2">{t('customers.subtitle')}</p>
       </header>
 
       <div className="bg-surface-container-low border border-outline-variant">
@@ -36,7 +37,7 @@ export default function Customers() {
           <table className="w-full text-left border-collapse min-w-[1080px]">
             <thead>
               <tr className="border-b border-outline-variant">
-                {['Name', 'Email', 'Phone', 'Verified', 'Last Login', 'Orders', 'Spent', 'Loyalty', 'Status'].map((h, i) => (
+                {[t('customers.name'), t('customers.email'), t('customers.phone'), t('customers.verified'), t('customers.last_login'), t('customers.orders'), t('customers.spent'), t('customers.loyalty'), t('common.status')].map((h, i) => (
                   <th key={h} className={`py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest ${i >= 5 ? 'text-right' : ''}`}>{h}</th>
                 ))}
               </tr>
@@ -73,7 +74,7 @@ export default function Customers() {
                             : 'border-error/60 text-error hover:bg-error hover:text-on-error'
                         }`}
                       >
-                        {c.is_blocked ? 'Unblock' : 'Block'}
+                        {c.is_blocked ? t('customers.unblock') : t('customers.block')}
                       </button>
                     </td>
                   </tr>
@@ -82,7 +83,7 @@ export default function Customers() {
             </tbody>
           </table>
           {customers.length === 0 && (
-            <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">No customers yet.</div>
+            <div className="py-16 text-center font-body-md text-body-md text-on-surface-variant">{t('customers.no_yet')}</div>
           )}
         </div>
       </div>

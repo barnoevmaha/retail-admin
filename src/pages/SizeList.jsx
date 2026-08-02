@@ -18,7 +18,7 @@ export default function SizeList() {
   }
 
   const remove = async (id) => {
-    if (!window.confirm('Delete this size?')) return
+    if (!window.confirm(t('sizes.delete_confirm'))) return
     await api.delete(`/sizes/${id}`)
     refresh()
   }
@@ -26,14 +26,14 @@ export default function SizeList() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-2">Attribute Editor</h2>
-        <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">Define and manage global product variations. These attributes form the foundation of inventory permutations.</p>
+        <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-2">{t('common.attribute_editor')}</h2>
+        <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">{t('common.attribute_subtitle')}</p>
       </div>
 
       <section className="bg-surface border border-outline-variant rounded-xl p-8 flex flex-col max-w-2xl h-[560px]">
         <div className="flex justify-between items-center mb-6 border-b border-outline-variant pb-4">
           <h3 className="font-headline-sm text-headline-sm text-primary">{t('sizes.title')}</h3>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">{sizes.length} Active</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">{t('common.active_count', { count: sizes.length })}</span>
         </div>
         <div className="flex-1 overflow-y-auto pr-2">
           <div className="flex flex-wrap gap-3">
@@ -50,7 +50,7 @@ export default function SizeList() {
             ))}
           </div>
           {sizes.length === 0 && (
-            <div className="py-12 text-center font-body-md text-body-md text-on-surface-variant">No sizes yet.</div>
+            <div className="py-12 text-center font-body-md text-body-md text-on-surface-variant">{t('sizes.no_yet')}</div>
           )}
         </div>
         <div className="mt-6 pt-4 border-t border-outline-variant">
@@ -58,7 +58,7 @@ export default function SizeList() {
             <div className="flex-1">
               <input
                 className="w-full bg-transparent border-0 border-b border-outline-variant px-0 py-2 font-body-md text-body-md text-primary uppercase focus:ring-0 focus:outline-none focus:border-secondary transition-colors placeholder:text-on-surface-variant"
-                placeholder="New size identifier..."
+                placeholder={t("sizes.new_placeholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />

@@ -19,7 +19,7 @@ export default function ColorList() {
   }
 
   const remove = async (id) => {
-    if (!window.confirm('Delete this color?')) return
+    if (!window.confirm(t('colors.delete_confirm'))) return
     await api.delete(`/colors/${id}`)
     refresh()
   }
@@ -30,14 +30,14 @@ export default function ColorList() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-2">Attribute Editor</h2>
-        <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">Define and manage global product variations. These attributes form the foundation of inventory permutations.</p>
+        <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-2">{t('common.attribute_editor')}</h2>
+        <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">{t('common.attribute_subtitle')}</p>
       </div>
 
       <section className="bg-surface border border-outline-variant rounded-xl p-8 flex flex-col max-w-2xl h-[560px]">
         <div className="flex justify-between items-center mb-6 border-b border-outline-variant pb-4">
           <h3 className="font-headline-sm text-headline-sm text-primary">{t('colors.title')}</h3>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">{colors.length} Active</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">{t('common.active_count', { count: colors.length })}</span>
         </div>
         <div className="flex-1 overflow-y-auto pr-2 space-y-2">
           {colors.map((c) => (
@@ -55,16 +55,16 @@ export default function ColorList() {
             </div>
           ))}
           {colors.length === 0 && (
-            <div className="py-12 text-center font-body-md text-body-md text-on-surface-variant">No colors yet.</div>
+            <div className="py-12 text-center font-body-md text-body-md text-on-surface-variant">{t('colors.no_yet')}</div>
           )}
         </div>
         <div className="mt-6 pt-4 border-t border-outline-variant">
           <div className="flex items-end gap-4">
             <div className="flex-1">
-              <input className={inputClass} placeholder="New color name..." value={name} onChange={(e) => setName(e.target.value)} />
+              <input className={inputClass} placeholder={t("colors.new_placeholder")} value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="w-24">
-              <input className={inputClass + ' font-label-sm text-label-sm uppercase'} placeholder="#HEX" value={hex} onChange={(e) => setHex(e.target.value)} />
+              <input className={inputClass + ' font-label-sm text-label-sm uppercase'} placeholder={t("colors.hex")} value={hex} onChange={(e) => setHex(e.target.value)} />
             </div>
             <button
               onClick={add}
