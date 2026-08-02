@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from 'react'
+
 const translations = {
   en: {
     'common.not_found': "Variant not found",
