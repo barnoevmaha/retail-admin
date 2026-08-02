@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
 import { t } from '../i18n'
+import { slugify } from '../utils/slugify'
 
 const imgSrc = (c) => (typeof c.image_url === 'string' ? c.image_url : typeof c.image === 'string' ? c.image : null)
 
@@ -9,15 +10,16 @@ export default function Categories() {
   const [formOpen, setFormOpen] = useState(false)
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
+  const [slugDirty, setSlugDirty] = useState(false)
 
   useEffect(() => { api.get('/categories/').then((r) => setCats(r.data)).catch(() => {}) }, [])
 
   const refresh = () => api.get('/categories/').then((r) => setCats(r.data))
 
   const add = async () => {
-    if (!name || !slug) return
+    if (!name) return
     await api.post('/categories/', { name, slug })
-    setName(''); setSlug(''); setFormOpen(false)
+    setName(''); setSlug(''); setSlugDirty(false); setFormOpen(false)
     refresh()
   }
 
@@ -50,11 +52,26 @@ export default function Categories() {
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] items-end gap-6 border border-outline-variant rounded-[4px] bg-surface-container-low p-6">
           <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('categories.name')}
-            <input className={inputClass + ' mt-2'} value={name} onChange={(e) => setName(e.target.value)} />
+            <input
+              className={inputClass + ' mt-2'}
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value)
+                if (!slugDirty) setSlug(slugify(e.target.value))
+              }}
+            />
           </label>
           <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('categories.slug')}
-            <input className={inputClass + ' mt-2'} value={slug} onChange={(e) => setSlug(e.target.value)} />
+            <input
+              className={inputClass + ' mt-2'}
+              value={slug}
+              onChange={(e) => {
+                setSlugDirty(true)
+                setSlug(e.target.value)
+              }}
+            />
+            <span className="mt-1 block font-body-sm text-body-sm text-on-surface-variant normal-case tracking-normal">Used in URLs.</span>
           </label>
           <button
             onClick={add}
