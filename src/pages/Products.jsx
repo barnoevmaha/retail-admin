@@ -10,6 +10,7 @@ export default function Products() {
   const [search, setSearch] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [form, setForm] = useState({ name: '', description: '', category_id: '', brand_id: '', image_url: '' })
+  const [files, setFiles] = useState([])
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
   const [saveMsg, setSaveMsg] = useState('')
@@ -43,8 +44,18 @@ export default function Products() {
       if (url) {
         await api.post(`/products/${data.id}/images`, { image_url: url, is_main: true }).catch(() => {})
       }
+      if (files.length) {
+        await Promise.all(files.map((f, i) => {
+          const fd = new FormData()
+          fd.append('file', f)
+          fd.append('sort_order', String(i))
+          fd.append('is_main', String(i === 0 && !url))
+          return api.post(`/products/${data.id}/images/upload`, fd).catch(() => {})
+        }))
+      }
       setFormOpen(false)
       setForm({ name: '', description: '', category_id: '', brand_id: '', image_url: '' })
+      setFiles([])
       setSaveMsg('')
       load()
     } catch (err) {
@@ -118,6 +129,17 @@ export default function Products() {
               placeholder="https://..."
               onChange={(e) => setForm({ ...form, image_url: e.target.value })}
             />
+          </label>
+          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+            {t('products.photos')}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="mt-2 text-sm text-on-surface file:mr-3 file:px-3 file:py-1.5 file:border-0 file:rounded-[4px] file:bg-surface-container-highest file:text-primary file:font-label-sm file:text-label-sm"
+              onChange={(e) => setFiles([...e.target.files])}
+            />
+            {files.length > 0 && <span className="block mt-1 font-body-sm text-body-sm text-secondary normal-case tracking-normal">{files.length} ✓</span>}
           </label>
           <button
             onClick={create}
