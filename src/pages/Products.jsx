@@ -5,9 +5,43 @@ import { t } from '../i18n'
 const imgSrc = (p) =>
   p.images?.[0]?.image_url || (typeof p.image_url === 'string' ? p.image_url : null)
 
+const Dropdown = ({ label, options, value, onChange }) => {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-high rounded-[4px] border border-outline-variant cursor-pointer hover:border-secondary transition-colors"
+      >
+        <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{label}</span>
+        <span className="font-body-md text-body-md text-primary">{options.find((o) => o.value === value)?.label}</span>
+        <span className="material-symbols-outlined text-on-surface-variant text-sm">{open ? 'expand_less' : 'expand_more'}</span>
+      </button>
+      {open && (
+        <div className="absolute z-10 mt-1 min-w-full max-h-72 overflow-auto bg-surface-container border border-outline-variant rounded-[4px] shadow-lg py-1">
+          {options.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => { onChange(o.value); setOpen(false) }}
+              className={`w-full text-left px-4 py-2 font-body-md text-body-md hover:bg-surface-container-high transition-colors ${o.value === value ? 'text-secondary' : 'text-primary'}`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Products() {
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
+  const [catId, setCatId] = useState('')
+  const [status, setStatus] = useState('')
+  const [sel, setSel] = useState(new Set())
   const [formOpen, setFormOpen] = useState(false)
   const [form, setForm] = useState({ name: '', description: '', category_id: '', brand_id: '', image_url: '' })
   const [files, setFiles] = useState([])
@@ -16,12 +50,19 @@ export default function Products() {
   const [saveMsg, setSaveMsg] = useState('')
 
   const load = () => {
-    api.get('/products/', { params: { q: search, limit: 50 } })
-      .then((r) => setProducts(r.data.items))
+    api.get('/products/', {
+      params: {
+        q: search,
+        limit: 50,
+        category_id: catId || undefined,
+        is_active: status === '' ? undefined : status === 'active',
+      },
+    })
+      .then((r) => { setProducts(r.data.items); setSel((s) => new Set([...s].filter((id) => r.data.items.some((p) => p.id === id)))) })
       .catch(() => {})
   }
 
-  useEffect(() => { load() }, [search])
+  useEffect(() => { load() }, [search, catId, status])
 
   useEffect(() => {
     api.get('/categories/').then((r) => setCategories(r.data)).catch(() => {})
@@ -63,6 +104,46 @@ export default function Products() {
     }
   }
 
+  const addFiles = (e) => {
+    setFiles((prev) => [...prev, ...Array.from(e.target.files || [])])
+    e.target.value = ''
+  }
+
+  const removeFile = (i) => setFiles((prev) => prev.filter((_, idx) => idx !== i))
+
+  const toggle = (id) => setSel((prev) => {
+    const s = new Set(prev)
+    if (s.has(id)) s.delete(id); else s.add(id)
+    return s
+  })
+
+  const toggleAll = () => {
+    const allIds = products.map((p) => p.id)
+    setSel((prev) => (prev.size === allIds.length && allIds.every((id) => prev.has(id)) ? new Set() : new Set(allIds)))
+  }
+
+  const del = async (id) => {
+    if (!window.confirm(t('products.delete_confirm'))) return
+    try {
+      await api.delete(`/products/${id}`)
+      setSaveMsg('')
+      load()
+    } catch (err) {
+      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+    }
+  }
+
+  const delSelected = async () => {
+    if (!sel.size) return
+    if (!window.confirm(t('products.delete_many_confirm', { n: sel.size }))) return
+    try {
+      await Promise.all([...sel].map((id) => api.delete(`/products/${id}`)))
+      load()
+    } catch (err) {
+      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+    }
+  }
+
   const inputClass =
     'w-full bg-transparent border-0 border-b border-outline-variant text-on-surface font-body-lg text-body-lg py-2 px-0 focus:ring-0 focus:outline-none focus:border-secondary transition-colors duration-300'
 
@@ -90,7 +171,7 @@ export default function Products() {
       </div>
 
       {formOpen && (
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] items-end gap-6 border border-outline-variant rounded-[4px] bg-surface-container-low p-6">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto_auto] items-end gap-6 border border-outline-variant rounded-[4px] bg-surface-container-low p-6">
           <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('products.name')}
             <input
@@ -102,7 +183,7 @@ export default function Products() {
           <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('products.category')}
             <select
-              className={inputClass + ' mt-2'}
+              className={inputClass + ' mt-2 cursor-pointer'}
               value={form.category_id}
               onChange={(e) => setForm({ ...form, category_id: e.target.value })}
             >
@@ -113,7 +194,7 @@ export default function Products() {
           <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('products.brand')}
             <select
-              className={inputClass + ' mt-2'}
+              className={inputClass + ' mt-2 cursor-pointer'}
               value={form.brand_id}
               onChange={(e) => setForm({ ...form, brand_id: e.target.value })}
             >
@@ -130,38 +211,61 @@ export default function Products() {
               onChange={(e) => setForm({ ...form, image_url: e.target.value })}
             />
           </label>
-          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+          <div className="flex gap-3 items-end">
+            <button
+              onClick={create}
+              className="px-6 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm text-on-surface hover:border-secondary hover:text-secondary transition-colors duration-300 uppercase tracking-wider"
+            >
+              {t('common.save')}
+            </button>
+          </div>
+          <label className="block col-span-full font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('products.photos')}
             <input
               type="file"
               accept="image/*"
               multiple
-              className="mt-2 text-sm text-on-surface file:mr-3 file:px-3 file:py-1.5 file:border-0 file:rounded-[4px] file:bg-surface-container-highest file:text-primary file:font-label-sm file:text-label-sm"
-              onChange={(e) => setFiles([...e.target.files])}
+              className="mt-2 text-sm text-on-surface file:mr-3 file:px-3 file:py-1.5 file:border-0 file:rounded-[4px] file:bg-surface-container-highest file:text-primary file:font-label-sm file:text-label-sm cursor-pointer"
+              onChange={addFiles}
             />
-            {files.length > 0 && <span className="block mt-1 font-body-sm text-body-sm text-secondary normal-case tracking-normal">{files.length} ✓</span>}
+            {files.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {files.map((f, i) => (
+                  <div key={i} className="relative w-14 h-14 border border-outline-variant rounded-[4px] overflow-hidden">
+                    <img src={URL.createObjectURL(f)} className="w-full h-full object-cover" alt="" />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(i)}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-error text-on-error rounded-full text-[10px] leading-none flex items-center justify-center"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </label>
-          <button
-            onClick={create}
-            className="px-6 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm text-on-surface hover:border-secondary hover:text-secondary transition-colors duration-300 uppercase tracking-wider"
-          >
-            {t('common.save')}
-          </button>
           {saveMsg && <p className="col-span-full font-body-sm text-body-sm text-error">{saveMsg}</p>}
         </div>
       )}
 
       <div className="flex flex-wrap items-center gap-4 py-4 border-t border-b border-outline-variant/50">
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-high rounded-[4px] border border-outline-variant cursor-pointer hover:border-secondary transition-colors">
-          <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('products.category_label')}</span>
-          <span className="font-body-md text-body-md text-primary">{t('common.all')}</span>
-          <span className="material-symbols-outlined text-on-surface-variant text-sm">expand_more</span>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-high rounded-[4px] border border-outline-variant cursor-pointer hover:border-secondary transition-colors">
-          <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('products.status_label')}</span>
-          <span className="font-body-md text-body-md text-primary">{t('products.active')}</span>
-          <span className="material-symbols-outlined text-on-surface-variant text-sm">expand_more</span>
-        </div>
+        <Dropdown
+          label={t('products.category_label')}
+          value={catId}
+          onChange={setCatId}
+          options={[{ value: '', label: t('common.all') }, ...categories.map((c) => ({ value: String(c.id), label: c.name }))]}
+        />
+        <Dropdown
+          label={t('products.status_label')}
+          value={status}
+          onChange={setStatus}
+          options={[
+            { value: '', label: t('common.all') },
+            { value: 'active', label: t('products.active') },
+            { value: 'inactive', label: t('products.inactive') },
+          ]}
+        />
         <div className="ml-auto relative group hidden sm:block w-64">
           <span className="material-symbols-outlined absolute left-0 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-secondary transition-colors">search</span>
           <input
@@ -174,11 +278,26 @@ export default function Products() {
         </div>
       </div>
 
+      {sel.size > 0 && (
+        <div className="flex items-center justify-between gap-4 px-4 py-3 bg-surface-container-high border border-outline-variant rounded-[4px]">
+          <span className="font-body-md text-body-md text-primary">{t('products.selected', { n: sel.size })}</span>
+          <button
+            onClick={delSelected}
+            className="flex items-center gap-2 px-4 py-2 border border-error/50 text-error font-label-sm text-label-sm uppercase tracking-wider hover:bg-error hover:text-on-error transition-colors rounded-[4px]"
+          >
+            <span className="material-symbols-outlined text-sm">delete</span>
+            {t('products.delete_selected')}
+          </button>
+        </div>
+      )}
+
       <div className="w-full overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr className="border-b border-outline-variant/50">
-              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal w-12"><input className="custom-checkbox" type="checkbox" /></th>
+              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal w-12">
+                <input className="custom-checkbox" type="checkbox" checked={products.length > 0 && products.every((p) => sel.has(p.id))} onChange={toggleAll} />
+              </th>
               <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal w-20">{t('products.item')}</th>
               <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal">{t('products.name')}</th>
               <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal">{t('products.category')}</th>
@@ -186,14 +305,15 @@ export default function Products() {
               <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-right">{t('products.price')}</th>
               <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-right">{t('products.stock')}</th>
               <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-center">{t('common.status')}</th>
+              <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-normal text-center w-16"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-outline-variant/30">
             {products.map((p) => {
               const s = stock(p)
               return (
-                <tr key={p.id} className="group hover:bg-surface-container-high transition-colors duration-200 cursor-pointer">
-                  <td className="py-3 px-4 align-middle"><input className="custom-checkbox" type="checkbox" /></td>
+                <tr key={p.id} className="group hover:bg-surface-container-high transition-colors duration-200">
+                  <td className="py-3 px-4 align-middle"><input className="custom-checkbox" type="checkbox" checked={sel.has(p.id)} onChange={() => toggle(p.id)} /></td>
                   <td className="py-3 px-4 align-middle">
                     <div className="w-12 h-16 bg-surface-container-highest rounded-[4px] border border-outline-variant/30 overflow-hidden relative flex items-center justify-center">
                       {imgSrc(p) ? (
@@ -214,6 +334,15 @@ export default function Products() {
                     ) : (
                       <span className="inline-block px-2 py-1 bg-surface-container-highest text-secondary border border-secondary/20 rounded-[4px] font-label-sm text-[10px] uppercase tracking-wider">{p.is_active ? t('products.active') : t('products.inactive')}</span>
                     )}
+                  </td>
+                  <td className="py-3 px-4 align-middle text-center">
+                    <button
+                      onClick={() => del(p.id)}
+                      className="w-8 h-8 flex items-center justify-center rounded-[4px] text-on-surface-variant opacity-0 group-hover:opacity-100 hover:text-error hover:bg-surface-container-highest transition-all"
+                      title={t('common.delete')}
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
                   </td>
                 </tr>
               )
