@@ -42,7 +42,7 @@ export default function Products() {
       })
       const url = form.image_url.trim()
       if (url) {
-        await api.post(`/products/${data.id}/images`, { image_url: url, is_main: true }).catch(() => {})
+        await api.post(`/products/${data.id}/images/`, { image_url: url, is_main: true }).catch(() => {})
       }
       if (files.length) {
         await Promise.all(files.map((f, i) => {
