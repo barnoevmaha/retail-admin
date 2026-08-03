@@ -47,9 +47,11 @@ export default function Products() {
   const [files, setFiles] = useState([])
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
+  const [sizes, setSizes] = useState([])
+  const [pickSizes, setPickSizes] = useState([])
   const [saveMsg, setSaveMsg] = useState('')
   const [openId, setOpenId] = useState(null)
-  const [vf, setVf] = useState({ size: '', color: '', purchase: '', selling: '', stock: '' })
+  const [vf, setVf] = useState({ sizes: [], color: '', purchase: '', selling: '', stock: '' })
 
   const load = () => {
     api.get('/products/', {
@@ -69,6 +71,7 @@ export default function Products() {
   useEffect(() => {
     api.get('/categories/').then((r) => setCategories(r.data)).catch(() => {})
     api.get('/brands/').then((r) => setBrands(r.data)).catch(() => {})
+    api.get('/sizes/').then((r) => setSizes(r.data)).catch(() => {})
   }, [])
 
   const create = async () => {
@@ -96,9 +99,13 @@ export default function Products() {
           return api.post(`/products/${data.id}/images/upload`, fd).catch(() => {})
         }))
       }
+      await Promise.all(pickSizes.map((s) =>
+        api.post('/variants/', { product_id: data.id, size_id: s.id, size: s.name }).catch(() => {})
+      ))
       setFormOpen(false)
       setForm({ name: '', description: '', category_id: '', brand_id: '', image_url: '' })
       setFiles([])
+      setPickSizes([])
       setSaveMsg('')
       load()
     } catch (err) {
@@ -147,29 +154,32 @@ export default function Products() {
   }
 
   const addVariant = async (productId) => {
-    if (!vf.size.trim() && !vf.color.trim()) {
+    if (!vf.sizes.length && !vf.color.trim()) {
       setSaveMsg(t('products.variant_size_required'))
       return
     }
     try {
-      const v = await api.post('/variants/', {
-        product_id: productId,
-        size: vf.size.trim() || null,
-        color: vf.color.trim() || null,
-        purchase_price: Number(vf.purchase) || 0,
-        selling_price: Number(vf.selling) || 0,
-      })
-      const qty = Number(vf.stock) || 0
-      if (qty > 0) {
-        const adj = await api.post('/adjustments/', { reason: 'initial_balance', notes: 'Initial stock' })
-        await api.post(`/adjustments/${adj.data.id}/items`, {
-          variant_id: v.data.id,
-          expected_quantity: 0,
-          actual_quantity: qty,
+      const created = []
+      for (const s of vf.sizes) {
+        const v = await api.post('/variants/', {
+          product_id: productId,
+          size_id: s.id,
+          size: s.name,
+          color: vf.color.trim() || null,
+          purchase_price: Number(vf.purchase) || 0,
+          selling_price: Number(vf.selling) || 0,
         })
+        created.push(v.data.id)
+      }
+      const qty = Number(vf.stock) || 0
+      if (qty > 0 && created.length) {
+        const adj = await api.post('/adjustments/', { reason: 'initial_balance', notes: 'Initial stock' })
+        await Promise.all(created.map((vid) =>
+          api.post(`/adjustments/${adj.data.id}/items`, { variant_id: vid, expected_quantity: 0, actual_quantity: qty })
+        ))
         await api.post(`/adjustments/${adj.data.id}/confirm`)
       }
-      setVf({ size: '', color: '', purchase: '', selling: '', stock: '' })
+      setVf({ sizes: [], color: '', purchase: '', selling: '', stock: '' })
       setSaveMsg('')
       load()
     } catch (err) {
@@ -233,6 +243,24 @@ export default function Products() {
               />
             </div>
           </label>
+          <div className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+            {t('products.sizes')}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {sizes.map((s) => {
+                const on = pickSizes.some((x) => x.id === s.id)
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setPickSizes((prev) => on ? prev.filter((x) => x.id !== s.id) : [...prev, s])}
+                    className={`px-4 py-1.5 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${on ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
+                  >
+                    {s.name}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
           <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('products.image_url')}
             <input
@@ -406,10 +434,24 @@ export default function Products() {
                         <div>
                           <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">{t('products.add_variant')}</span>
                           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-end">
-                            <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-                              {t('products.variant_size')}
-                              <input className={inputClass + ' mt-1'} value={vf.size} onChange={(e) => setVf({ ...vf, size: e.target.value })} />
-                            </label>
+                            <div className="sm:col-span-2">
+                              <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">{t('products.variant_size')}</span>
+                              <div className="mt-1.5 flex flex-wrap gap-2">
+                                {sizes.map((s) => {
+                                  const on = vf.sizes.some((x) => x.id === s.id)
+                                  return (
+                                    <button
+                                      key={s.id}
+                                      type="button"
+                                      onClick={() => setVf((prev) => on ? { ...prev, sizes: prev.sizes.filter((x) => x.id !== s.id) } : { ...prev, sizes: [...prev.sizes, s] })}
+                                      className={`px-3 py-1 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${on ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
+                                    >
+                                      {s.name}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
                             <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
                               {t('products.variant_color')}
                               <input className={inputClass + ' mt-1'} value={vf.color} onChange={(e) => setVf({ ...vf, color: e.target.value })} />
