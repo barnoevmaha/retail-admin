@@ -1,6 +1,13 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || '/api' })
+// ponytail: if a stale http:// VITE_API_URL is baked in, same-origin proxy is safer than a blocked mixed-content call
+const configured = import.meta.env.VITE_API_URL || ''
+const baseURL =
+  configured && !(configured.startsWith('http://') && typeof window !== 'undefined' && window.location.protocol === 'https:')
+    ? configured
+    : '/api'
+
+const api = axios.create({ baseURL })
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
