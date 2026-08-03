@@ -113,7 +113,7 @@ export default function Brands() {
       </div>
 
       <div className="mt-2 flex justify-between items-center text-on-surface-variant">
-        <span className="font-body-md text-body-md">Showing {brands.length} of {brands.length} brands</span>
+        <span className="font-body-md text-body-md">{t('brands.showing', { shown: brands.length, total: brands.length })}</span>
         <div className="flex gap-2">
           <button disabled className="p-2 border border-outline-variant rounded-[4px] disabled:opacity-30"><span className="material-symbols-outlined text-sm">chevron_left</span></button>
           <button disabled className="p-2 border border-outline-variant rounded-[4px] disabled:opacity-30"><span className="material-symbols-outlined text-sm">chevron_right</span></button>

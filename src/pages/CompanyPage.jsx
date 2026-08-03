@@ -3,12 +3,12 @@ import api from '../api/client'
 import { t } from '../i18n'
 
 const FIELDS = [
-  ['name', 'Company Name'],
-  ['address', 'Address'],
-  ['phone', 'Phone'],
-  ['email', 'Email'],
-  ['logo', 'Logo URL'],
-  ['tin', 'TIN / Tax ID'],
+  ['name', 'company.name'],
+  ['address', 'company.address'],
+  ['phone', 'company.phone'],
+  ['email', 'company.email'],
+  ['logo', 'company.logo'],
+  ['tin', 'company.tin'],
 ]
 
 export default function CompanyPage() {
@@ -43,9 +43,9 @@ export default function CompanyPage() {
       <div className="p-8 bg-surface-container-low border border-outline-variant max-w-2xl">
         <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-8">{t('company.details')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-6">
-          {FIELDS.map(([key, label]) => (
+          {FIELDS.map(([key, labelKey]) => (
             <div key={key}>
-              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{label}</label>
+              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{t(labelKey)}</label>
               <input
                 type="text"
                 className="w-full bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 text-body-lg font-body-lg placeholder:text-on-surface-variant/40"

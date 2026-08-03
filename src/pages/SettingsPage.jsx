@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { t } from '../i18n'
 
 const FIELDS = [
-  { key: 'store_name', label: 'Store Name', hint: 'Shown on receipts and invoices' },
-  { key: 'currency', label: 'Currency', hint: 'e.g. USD, UZS' },
-  { key: 'timezone', label: 'Timezone', hint: 'e.g. Asia/Tashkent' },
-  { key: 'tax_rate', label: 'Tax Rate', hint: 'e.g. 12 (percent)' },
-  { key: 'receipt_footer', label: 'Receipt Footer', hint: 'Shown at the bottom of receipts' },
-  { key: 'sms_provider', label: 'SMS Provider', hint: 'Provider key or name' },
-  { key: 'telegram_bot_token', label: 'Telegram Bot Token', hint: 'Used for Telegram notifications' },
+  { key: 'store_name', labelKey: 'settings.store_name', hintKey: 'settings.store_name_hint' },
+  { key: 'currency', labelKey: 'settings.currency', hintKey: 'settings.currency_hint' },
+  { key: 'timezone', labelKey: 'settings.timezone', hintKey: 'settings.timezone_hint' },
+  { key: 'tax_rate', labelKey: 'settings.tax_rate', hintKey: 'settings.tax_rate_hint' },
+  { key: 'receipt_footer', labelKey: 'settings.receipt_footer', hintKey: 'settings.receipt_footer_hint' },
+  { key: 'sms_provider', labelKey: 'settings.sms_provider', hintKey: 'settings.sms_provider_hint' },
+  { key: 'telegram_bot_token', labelKey: 'settings.telegram_bot_token', hintKey: 'settings.telegram_bot_token_hint' },
 ]
 
 export default function SettingsPage() {
@@ -37,17 +38,17 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary uppercase tracking-wide">
-          Settings
+          {t('settings.title')}
         </h1>
-        <p className="font-body-md text-body-md text-on-surface-variant mt-2">Store preferences. Changes save automatically.</p>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-2">{t('settings.subtitle')}</p>
       </header>
 
       <div className="p-8 bg-surface-container-low border border-outline-variant max-w-2xl">
-        <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-8">Store Settings</h2>
+        <h2 className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-8">{t('settings.details')}</h2>
         <div className="space-y-8">
-          {FIELDS.map(({ key, label, hint }) => (
+          {FIELDS.map(({ key, labelKey, hintKey }) => (
             <div key={key}>
-              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{label}</label>
+              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{t(labelKey)}</label>
               <input
                 type="text"
                 className="w-full bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 text-body-lg font-body-lg placeholder:text-on-surface-variant/40"
@@ -55,7 +56,7 @@ export default function SettingsPage() {
                 onChange={(e) => update(key, e.target.value)}
                 onBlur={(e) => save(key, e.target.value)}
               />
-              {hint && <p className="font-label-sm text-label-sm text-on-surface-variant/40 mt-1">{hint}</p>}
+              {hint && <p className="font-label-sm text-label-sm text-on-surface-variant/40 mt-1">{t(hintKey)}</p>}
             </div>
           ))}
         </div>
