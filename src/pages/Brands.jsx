@@ -11,6 +11,7 @@ export default function Brands() {
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugDirty, setSlugDirty] = useState(false)
+  const [menuId, setMenuId] = useState(null)
 
   useEffect(() => { api.get('/brands/').then((r) => setBrands(r.data)).catch(() => {}) }, [])
 
@@ -24,8 +25,16 @@ export default function Brands() {
   }
 
   const remove = async (id) => {
-    if (!window.confirm('Delete this brand?')) return
+    if (!window.confirm(t('common.delete_confirm'))) return
     await api.delete(`/brands/${id}`)
+    refresh()
+  }
+
+  const edit = async (id) => {
+    const b = brands.find((x) => x.id === id)
+    const newName = window.prompt(t('brands.name'), b?.name)
+    if (!newName || newName === b?.name) return
+    await api.put(`/brands/${id}`, { ...b, name: newName })
     refresh()
   }
 
@@ -103,9 +112,15 @@ export default function Brands() {
               </div>
               <div className="font-body-lg text-body-lg text-primary uppercase tracking-wide">{b.name}</div>
               <div className="hidden md:block font-body-md text-body-md text-on-surface-variant text-right">{b.products_count ?? '—'} items</div>
-              <div className="text-right flex items-center justify-end gap-2">
+              <div className="text-right flex items-center justify-end gap-2 relative">
                 <button onClick={() => remove(b.id)} className="text-on-surface-variant hover:text-error transition-colors"><span className="material-symbols-outlined text-[20px]">delete</span></button>
-                <button className="text-on-surface-variant hover:text-secondary transition-colors"><span className="material-symbols-outlined">more_vert</span></button>
+                <button onClick={() => setMenuId(menuId === b.id ? null : b.id)} className="text-on-surface-variant hover:text-secondary transition-colors"><span className="material-symbols-outlined">more_vert</span></button>
+                {menuId === b.id && (
+                  <div className="absolute right-0 top-8 z-10 bg-surface-container border border-outline-variant rounded-[4px] shadow-lg py-1 min-w-40">
+                    <button onClick={() => { edit(b.id); setMenuId(null) }} className="w-full text-left px-4 py-2 font-body-md text-body-md text-primary hover:bg-surface-container-high transition-colors">{t('common.edit')}</button>
+                    <button onClick={() => { remove(b.id); setMenuId(null) }} className="w-full text-left px-4 py-2 font-body-md text-body-md text-error hover:bg-surface-container-high transition-colors">{t('common.delete')}</button>
+                  </div>
+                )}
               </div>
             </div>
           ))
