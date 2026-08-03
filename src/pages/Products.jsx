@@ -54,7 +54,8 @@ export default function Products() {
   const [customColor, setCustomColor] = useState('')
   const [saveMsg, setSaveMsg] = useState('')
   const [openId, setOpenId] = useState(null)
-  const [vf, setVf] = useState({ sizes: [], color: '', purchase: '', selling: '', stock: '' })
+  const [vf, setVf] = useState({ sizes: [], colors: [], customColor: '', purchase: '', selling: '' })
+  const [descDraft, setDescDraft] = useState('')
 
   const load = () => {
     api.get('/products/', {
@@ -175,32 +176,42 @@ export default function Products() {
   }
 
   const addVariant = async (productId) => {
-    if (!vf.sizes.length && !vf.color.trim()) {
+    if (!vf.sizes.length && !vf.colors.length) {
       setSaveMsg(t('products.variant_size_required'))
       return
     }
     try {
+      const color = vf.colors[0]?.name || null
       const created = []
       for (const s of vf.sizes) {
         const v = await api.post('/variants/', {
           product_id: productId,
           size_id: s.id,
           size: s.name,
-          color: vf.color.trim() || null,
+          color,
           purchase_price: Number(vf.purchase) || 0,
           selling_price: Number(vf.selling) || 0,
         })
-        created.push(v.data.id)
+        created.push({ id: v.data.id, qty: Number(s.qty) || 0 })
       }
-      const qty = Number(vf.stock) || 0
-      if (qty > 0 && created.length) {
+      if (created.length) {
         const adj = await api.post('/adjustments/', { reason: 'initial_balance', notes: 'Initial stock' })
-        await Promise.all(created.map((vid) =>
-          api.post(`/adjustments/${adj.data.id}/items`, { variant_id: vid, expected_quantity: 0, actual_quantity: qty })
+        await Promise.all(created.map((c) =>
+          api.post(`/adjustments/${adj.data.id}/items`, { variant_id: c.id, expected_quantity: 0, actual_quantity: c.qty })
         ))
         await api.post(`/adjustments/${adj.data.id}/confirm`)
       }
-      setVf({ sizes: [], color: '', purchase: '', selling: '', stock: '' })
+      setVf({ sizes: [], colors: [], customColor: '', purchase: '', selling: '' })
+      setSaveMsg('')
+      load()
+    } catch (err) {
+      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+    }
+  }
+
+  const saveDescription = async (p) => {
+    try {
+      await api.put(`/products/${p.id}`, { description: descDraft.trim() || null })
       setSaveMsg('')
       load()
     } catch (err) {
@@ -476,7 +487,7 @@ export default function Products() {
                     </div>
                   </td>
                   <td className="py-3 px-4 align-middle font-body-md text-body-md text-primary">
-                    <button onClick={() => { setOpenId(openId === p.id ? null : p.id); setSaveMsg('') }} className="text-left hover:text-secondary transition-colors">
+                    <button onClick={() => { setOpenId(openId === p.id ? null : p.id); setSaveMsg(''); setDescDraft(p.description || '') }} className="text-left hover:text-secondary transition-colors">
                       {p.name}
                     </button>
                   </td>
@@ -524,30 +535,103 @@ export default function Products() {
                           </div>
                         </div>
                         <div>
+                          <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">{t('products.description')}</span>
+                          <div className="mt-3 flex items-start gap-3">
+                            <textarea
+                              rows={3}
+                              value={descDraft}
+                              placeholder={t('products.description_placeholder')}
+                              onChange={(e) => setDescDraft(e.target.value)}
+                              className="flex-1 bg-transparent border border-outline-variant rounded-[4px] px-3 py-2 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant"
+                            />
+                            <button
+                              onClick={() => saveDescription(p)}
+                              className="px-6 py-2 border border-secondary/60 rounded-[4px] font-label-sm text-label-sm text-secondary hover:bg-secondary hover:text-on-secondary transition-colors uppercase tracking-wider whitespace-nowrap"
+                            >
+                              {t('common.save')}
+                            </button>
+                          </div>
+                        </div>
+                        <div>
                           <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">{t('products.add_variant')}</span>
                           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-end">
-                            <div className="sm:col-span-2">
+                            <div className="sm:col-span-3 md:col-span-2">
                               <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">{t('products.variant_size')}</span>
                               <div className="mt-1.5 flex flex-wrap gap-2">
                                 {sizes.map((s) => {
                                   const on = vf.sizes.some((x) => x.id === s.id)
                                   return (
-                                    <button
-                                      key={s.id}
-                                      type="button"
-                                      onClick={() => setVf((prev) => on ? { ...prev, sizes: prev.sizes.filter((x) => x.id !== s.id) } : { ...prev, sizes: [...prev.sizes, s] })}
-                                      className={`px-3 py-1 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${on ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
-                                    >
-                                      {s.name}
-                                    </button>
+                                    <span key={s.id} className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => setVf((prev) => on ? { ...prev, sizes: prev.sizes.filter((x) => x.id !== s.id) } : { ...prev, sizes: [...prev.sizes, { ...s, qty: '' }] })}
+                                        className={`px-3 py-1 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${on ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
+                                      >
+                                        {s.name}
+                                      </button>
+                                      {on && (
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          value={vf.sizes.find((x) => x.id === s.id).qty}
+                                          placeholder={t('products.qty')}
+                                          onChange={(e) => setVf((prev) => ({ ...prev, sizes: prev.sizes.map((x) => x.id === s.id ? { ...x, qty: e.target.value } : x) }))}
+                                          className="w-16 bg-transparent border border-outline-variant rounded-[4px] text-center text-body-md font-body-md text-primary py-1 focus:border-secondary focus:outline-none"
+                                        />
+                                      )}
+                                    </span>
                                   )
                                 })}
                               </div>
                             </div>
-                            <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-                              {t('products.variant_color')}
-                              <input className={inputClass + ' mt-1'} value={vf.color} onChange={(e) => setVf({ ...vf, color: e.target.value })} />
-                            </label>
+                            <div className="sm:col-span-2 md:col-span-2">
+                              <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">{t('products.colors')}</span>
+                              <div className="mt-1.5 flex flex-wrap gap-2">
+                                {colors.map((c) => {
+                                  const on = vf.colors.some((x) => x.id === c.id)
+                                  return (
+                                    <button
+                                      key={c.id}
+                                      type="button"
+                                      onClick={() => setVf((prev) => on ? { ...prev, colors: prev.colors.filter((x) => x.id !== c.id) } : { ...prev, colors: [...prev.colors, c] })}
+                                      className={`px-3 py-1 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${on ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
+                                    >
+                                      {c.name}
+                                    </button>
+                                  )
+                                })}
+                                {vf.colors.filter((c) => !c.id).map((c) => (
+                                  <span key={c.name} className="flex items-center gap-1.5 px-3 py-1 border border-secondary bg-secondary text-on-secondary rounded-[4px]">
+                                    <span className="font-label-sm text-label-sm uppercase tracking-wider">{c.name}</span>
+                                    <button type="button" onClick={() => setVf((prev) => ({ ...prev, colors: prev.colors.filter((x) => x.name !== c.name) }))} className="text-on-secondary/70 hover:text-on-secondary">×</button>
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="mt-2 flex gap-2">
+                                <input
+                                  value={vf.customColor}
+                                  placeholder={t('products.custom_color')}
+                                  onChange={(e) => setVf({ ...vf, customColor: e.target.value })}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && vf.customColor.trim()) {
+                                      setVf((prev) => ({ ...prev, colors: [...prev.colors, { name: vf.customColor.trim() }], customColor: '' }))
+                                    }
+                                  }}
+                                  className="flex-1 min-w-24 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (vf.customColor.trim()) {
+                                      setVf((prev) => ({ ...prev, colors: [...prev.colors, { name: vf.customColor.trim() }], customColor: '' }))
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors"
+                                >
+                                  {t('products.add_color')}
+                                </button>
+                              </div>
+                            </div>
                             <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
                               {t('products.variant_purchase')}
                               <input className={inputClass + ' mt-1'} type="number" min="0" value={vf.purchase} onChange={(e) => setVf({ ...vf, purchase: e.target.value })} />
@@ -555,10 +639,6 @@ export default function Products() {
                             <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
                               {t('products.variant_selling')}
                               <input className={inputClass + ' mt-1'} type="number" min="0" value={vf.selling} onChange={(e) => setVf({ ...vf, selling: e.target.value })} />
-                            </label>
-                            <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-                              {t('products.variant_stock')}
-                              <input className={inputClass + ' mt-1'} type="number" min="0" value={vf.stock} onChange={(e) => setVf({ ...vf, stock: e.target.value })} />
                             </label>
                             <button
                               onClick={() => addVariant(p.id)}
