@@ -9,7 +9,7 @@ export default function ImageGallery() {
   const fileRef = useRef()
 
   useEffect(() => {
-    api.get('/products/', { params: { limit: 200 } }).then((r) => setProducts(r.data.items)).catch(() => {})
+    api.get('/products/', { params: { limit: 100 } }).then((r) => setProducts(r.data.items)).catch(() => {})
   }, [])
 
   useEffect(() => {
