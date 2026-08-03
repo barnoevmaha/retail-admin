@@ -343,6 +343,7 @@ export default function Products() {
             {products.map((p) => {
               const s = stock(p)
               return (
+                <>
                 <tr key={p.id} className="group hover:bg-surface-container-high transition-colors duration-200">
                   <td className="py-3 px-4 align-middle"><input className="custom-checkbox" type="checkbox" checked={sel.has(p.id)} onChange={() => toggle(p.id)} /></td>
                   <td className="py-3 px-4 align-middle">
@@ -437,6 +438,7 @@ export default function Products() {
                     </td>
                   </tr>
                 )}
+                </>
               )
             })}
           </tbody>
