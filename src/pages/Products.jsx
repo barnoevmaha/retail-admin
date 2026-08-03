@@ -48,6 +48,8 @@ export default function Products() {
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
   const [saveMsg, setSaveMsg] = useState('')
+  const [openId, setOpenId] = useState(null)
+  const [vf, setVf] = useState({ size: '', color: '', purchase: '', selling: '', stock: '' })
 
   const load = () => {
     api.get('/products/', {
@@ -144,6 +146,37 @@ export default function Products() {
     }
   }
 
+  const addVariant = async (productId) => {
+    if (!vf.size.trim() && !vf.color.trim()) {
+      setSaveMsg(t('products.variant_size_required'))
+      return
+    }
+    try {
+      const v = await api.post('/variants/', {
+        product_id: productId,
+        size: vf.size.trim() || null,
+        color: vf.color.trim() || null,
+        purchase_price: Number(vf.purchase) || 0,
+        selling_price: Number(vf.selling) || 0,
+      })
+      const qty = Number(vf.stock) || 0
+      if (qty > 0) {
+        const adj = await api.post('/adjustments/', { reason: 'initial_balance', notes: 'Initial stock' })
+        await api.post(`/adjustments/${adj.data.id}/items`, {
+          variant_id: v.data.id,
+          expected_quantity: 0,
+          actual_quantity: qty,
+        })
+        await api.post(`/adjustments/${adj.data.id}/confirm`)
+      }
+      setVf({ size: '', color: '', purchase: '', selling: '', stock: '' })
+      setSaveMsg('')
+      load()
+    } catch (err) {
+      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+    }
+  }
+
   const inputClass =
     'w-full bg-transparent border-0 border-b border-outline-variant text-on-surface font-body-lg text-body-lg py-2 px-0 focus:ring-0 focus:outline-none focus:border-secondary transition-colors duration-300'
 
@@ -153,7 +186,7 @@ export default function Products() {
     return min ? `$${min.toLocaleString()}` : '—'
   }
 
-  const stock = (p) => (p.variants || []).reduce((s, v) => s + (Number(v.stock_quantity) || 0), 0)
+  const stock = (p) => (p.variants || []).reduce((s, v) => s + (Number(v.quantity) || 0), 0)
 
   return (
     <div className="flex flex-col gap-8">
@@ -321,7 +354,11 @@ export default function Products() {
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4 align-middle font-body-md text-body-md text-primary">{p.name}</td>
+                  <td className="py-3 px-4 align-middle font-body-md text-body-md text-primary">
+                    <button onClick={() => { setOpenId(openId === p.id ? null : p.id); setSaveMsg('') }} className="text-left hover:text-secondary transition-colors">
+                      {p.name}
+                    </button>
+                  </td>
                   <td className="py-3 px-4 align-middle font-body-md text-body-md text-on-surface-variant">{p.category_name || '—'}</td>
                   <td className="py-3 px-4 align-middle font-body-md text-body-md text-on-surface-variant">{p.brand_name || '—'}</td>
                   <td className="py-3 px-4 align-middle font-body-md text-body-md text-primary text-right">{price(p)}</td>
@@ -343,6 +380,63 @@ export default function Products() {
                     </button>
                   </td>
                 </tr>
+                {openId === p.id && (
+                  <tr className="bg-surface-container-lowest/50">
+                    <td colSpan={9} className="py-6 px-6">
+                      <div className="flex flex-col gap-6">
+                        <div>
+                          <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">{t('products.variants')}</span>
+                          <div className="mt-3 flex flex-col gap-2">
+                            {(p.variants || []).length === 0 && (
+                              <span className="font-body-md text-body-md text-on-surface-variant">{t('products.variant_no')}</span>
+                            )}
+                            {(p.variants || []).map((v) => (
+                              <div key={v.id} className="flex items-center gap-6 border border-outline-variant/40 rounded-[4px] px-4 py-2.5">
+                                <span className="font-body-md text-body-md text-primary w-32">{[v.size, v.color].filter(Boolean).join(' / ') || '—'}</span>
+                                <span className="font-body-sm text-body-sm text-on-surface-variant">{v.barcode}</span>
+                                <span className="font-body-md text-body-md text-primary ml-auto">${(Number(v.selling_price) || 0).toLocaleString()}</span>
+                                <span className={`font-label-sm text-label-sm px-2 py-1 rounded-[4px] uppercase tracking-wider ${(Number(v.quantity) || 0) > 0 ? 'text-secondary border border-secondary/30' : 'text-on-surface-variant border border-outline-variant/40'}`}>
+                                  {(Number(v.quantity) || 0)} {t('products.variant_stock')}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">{t('products.add_variant')}</span>
+                          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-end">
+                            <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+                              {t('products.variant_size')}
+                              <input className={inputClass + ' mt-1'} value={vf.size} onChange={(e) => setVf({ ...vf, size: e.target.value })} />
+                            </label>
+                            <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+                              {t('products.variant_color')}
+                              <input className={inputClass + ' mt-1'} value={vf.color} onChange={(e) => setVf({ ...vf, color: e.target.value })} />
+                            </label>
+                            <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+                              {t('products.variant_purchase')}
+                              <input className={inputClass + ' mt-1'} type="number" min="0" value={vf.purchase} onChange={(e) => setVf({ ...vf, purchase: e.target.value })} />
+                            </label>
+                            <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+                              {t('products.variant_selling')}
+                              <input className={inputClass + ' mt-1'} type="number" min="0" value={vf.selling} onChange={(e) => setVf({ ...vf, selling: e.target.value })} />
+                            </label>
+                            <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+                              {t('products.variant_stock')}
+                              <input className={inputClass + ' mt-1'} type="number" min="0" value={vf.stock} onChange={(e) => setVf({ ...vf, stock: e.target.value })} />
+                            </label>
+                            <button
+                              onClick={() => addVariant(p.id)}
+                              className="px-6 py-2 border border-secondary/60 rounded-[4px] font-label-sm text-label-sm text-secondary hover:bg-secondary hover:text-on-secondary transition-colors uppercase tracking-wider"
+                            >
+                              {t('common.add')}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               )
             })}
           </tbody>
