@@ -182,25 +182,23 @@ export default function Products() {
           </label>
           <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('products.category')}
-            <select
-              className={inputClass + ' mt-2 cursor-pointer'}
-              value={form.category_id}
-              onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-            >
-              <option value=""></option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <div className="mt-2">
+              <Dropdown
+                value={form.category_id}
+                onChange={(v) => setForm({ ...form, category_id: v })}
+                options={[{ value: '', label: '—' }, ...categories.map((c) => ({ value: String(c.id), label: c.name }))]}
+              />
+            </div>
           </label>
           <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('products.brand')}
-            <select
-              className={inputClass + ' mt-2 cursor-pointer'}
-              value={form.brand_id}
-              onChange={(e) => setForm({ ...form, brand_id: e.target.value })}
-            >
-              <option value=""></option>
-              {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
+            <div className="mt-2">
+              <Dropdown
+                value={form.brand_id}
+                onChange={(v) => setForm({ ...form, brand_id: v })}
+                options={[{ value: '', label: '—' }, ...brands.map((b) => ({ value: String(b.id), label: b.name }))]}
+              />
+            </div>
           </label>
           <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('products.image_url')}
