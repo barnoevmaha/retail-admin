@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import api from '../api/client'
+import { t } from '../i18n'
 
 // ponytail: mock fallback until GET /orders/{id} exists on the backend — delete this block once live
 const MOCK = {
@@ -129,15 +130,15 @@ export default function OrderDetail() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 flex-grow">
                 <div>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Full Name</p>
+                  <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">{t('common.full_name')}</p>
                   <p className="font-medium text-lg text-primary">{customer.first_name} {customer.last_name}</p>
                 </div>
                 <div>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Email Address</p>
+                  <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">{t('common.email')}</p>
                   <p className="font-body-md text-body-md text-on-surface">{customer.email || '—'}</p>
                 </div>
                 <div>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Phone Number</p>
+                  <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">{t('common.phone')}</p>
                   <p className="font-body-md text-body-md text-on-surface">{customer.phone || '—'}</p>
                 </div>
                 <div>
@@ -249,7 +250,7 @@ export default function OrderDetail() {
             <div className="mt-10 pt-10 border-t border-outline-variant/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-2">Payment Method</p>
+                  <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-2">{t('order.payment_method')}</p>
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-secondary">credit_card</span>
                     <span className="font-medium text-on-surface">{order.payment_label || order.payment_method || '—'}</span>
@@ -299,7 +300,7 @@ export default function OrderDetail() {
                 <span className="material-symbols-outlined text-on-surface-variant">verified_user</span>
               </div>
               <div>
-                <p className="text-sm font-medium text-on-surface">Security Clearance</p>
+                <p className="text-sm font-medium text-on-surface">{t('order.security_clearance')}</p>
                 <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">Risk Level: Low</p>
               </div>
             </div>
