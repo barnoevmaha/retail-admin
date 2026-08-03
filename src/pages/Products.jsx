@@ -8,12 +8,44 @@ const imgSrc = (p) =>
 export default function Products() {
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
+  const [formOpen, setFormOpen] = useState(false)
+  const [form, setForm] = useState({ name: '', description: '', category_id: '', brand_id: '' })
+  const [categories, setCategories] = useState([])
+  const [brands, setBrands] = useState([])
+  const [saveMsg, setSaveMsg] = useState('')
 
-  useEffect(() => {
+  const load = () => {
     api.get('/products/', { params: { q: search, limit: 50 } })
       .then((r) => setProducts(r.data.items))
       .catch(() => {})
-  }, [search])
+  }
+
+  useEffect(() => { load() }, [search])
+
+  useEffect(() => {
+    api.get('/categories/').then((r) => setCategories(r.data)).catch(() => {})
+    api.get('/brands/').then((r) => setBrands(r.data)).catch(() => {})
+  }, [])
+
+  const create = async () => {
+    try {
+      await api.post('/products/', {
+        name: form.name.trim(),
+        description: form.description.trim() || null,
+        category_id: form.category_id ? Number(form.category_id) : null,
+        brand_id: form.brand_id ? Number(form.brand_id) : null,
+      })
+      setFormOpen(false)
+      setForm({ name: '', description: '', category_id: '', brand_id: '' })
+      setSaveMsg('')
+      load()
+    } catch (err) {
+      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+    }
+  }
+
+  const inputClass =
+    'w-full bg-transparent border-0 border-b border-outline-variant text-on-surface font-body-lg text-body-lg py-2 px-0 focus:ring-0 focus:outline-none focus:border-secondary transition-colors duration-300'
 
   const price = (p) => {
     const prices = (p.variants || []).map((v) => Number(v.selling_price) || 0)
@@ -30,10 +62,55 @@ export default function Products() {
           <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest block mb-2">{t('products.subtitle')}</span>
           <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">{t('products.title')}</h2>
         </div>
-        <button className="px-6 py-3 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-primary hover:border-secondary hover:text-secondary transition-all duration-300 w-fit">
+        <button
+          onClick={() => { setFormOpen(!formOpen); setSaveMsg('') }}
+          className="px-6 py-3 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-primary hover:border-secondary hover:text-secondary transition-all duration-300 w-fit"
+        >
           {t('products.new')}
         </button>
       </div>
+
+      {formOpen && (
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] items-end gap-6 border border-outline-variant rounded-[4px] bg-surface-container-low p-6">
+          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+            {t('products.name')}
+            <input
+              className={inputClass + ' mt-2'}
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+          </label>
+          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+            {t('products.category')}
+            <select
+              className={inputClass + ' mt-2'}
+              value={form.category_id}
+              onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+            >
+              <option value=""></option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+            {t('products.brand')}
+            <select
+              className={inputClass + ' mt-2'}
+              value={form.brand_id}
+              onChange={(e) => setForm({ ...form, brand_id: e.target.value })}
+            >
+              <option value=""></option>
+              {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          </label>
+          <button
+            onClick={create}
+            className="px-6 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm text-on-surface hover:border-secondary hover:text-secondary transition-colors duration-300 uppercase tracking-wider"
+          >
+            {t('common.save')}
+          </button>
+          {saveMsg && <p className="col-span-full font-body-sm text-body-sm text-error">{saveMsg}</p>}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-4 py-4 border-t border-b border-outline-variant/50">
         <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-high rounded-[4px] border border-outline-variant cursor-pointer hover:border-secondary transition-colors">
