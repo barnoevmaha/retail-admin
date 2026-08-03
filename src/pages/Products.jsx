@@ -48,7 +48,10 @@ export default function Products() {
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
   const [sizes, setSizes] = useState([])
+  const [colors, setColors] = useState([])
   const [pickSizes, setPickSizes] = useState([])
+  const [pickColors, setPickColors] = useState([])
+  const [customColor, setCustomColor] = useState('')
   const [saveMsg, setSaveMsg] = useState('')
   const [openId, setOpenId] = useState(null)
   const [vf, setVf] = useState({ sizes: [], color: '', purchase: '', selling: '', stock: '' })
@@ -72,6 +75,7 @@ export default function Products() {
     api.get('/categories/').then((r) => setCategories(r.data)).catch(() => {})
     api.get('/brands/').then((r) => setBrands(r.data)).catch(() => {})
     api.get('/sizes/').then((r) => setSizes(r.data)).catch(() => {})
+    api.get('/colors/').then((r) => setColors(r.data)).catch(() => {})
   }, [])
 
   const create = async () => {
@@ -99,13 +103,30 @@ export default function Products() {
           return api.post(`/products/${data.id}/images/upload`, fd).catch(() => {})
         }))
       }
-      await Promise.all(pickSizes.map((s) =>
-        api.post('/variants/', { product_id: data.id, size_id: s.id, size: s.name }).catch(() => {})
-      ))
+      const color = pickColors[0]?.name || null
+      const created = []
+      for (const s of pickSizes) {
+        const v = await api.post('/variants/', {
+          product_id: data.id,
+          size_id: s.id,
+          size: s.name,
+          color,
+        }).catch(() => null)
+        if (v) created.push({ id: v.data.id, qty: Number(s.qty) || 0 })
+      }
+      if (created.length) {
+        const adj = await api.post('/adjustments/', { reason: 'initial_balance', notes: 'Initial stock' })
+        await Promise.all(created.map((c) =>
+          api.post(`/adjustments/${adj.data.id}/items`, { variant_id: c.id, expected_quantity: 0, actual_quantity: c.qty })
+        ))
+        await api.post(`/adjustments/${adj.data.id}/confirm`).catch(() => {})
+      }
       setFormOpen(false)
       setForm({ name: '', description: '', category_id: '', brand_id: '', image_url: '' })
       setFiles([])
       setPickSizes([])
+      setPickColors([])
+      setCustomColor('')
       setSaveMsg('')
       load()
     } catch (err) {
@@ -245,20 +266,81 @@ export default function Products() {
           </label>
           <div className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('products.sizes')}
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2 items-center">
               {sizes.map((s) => {
-                const on = pickSizes.some((x) => x.id === s.id)
+                const pick = pickSizes.find((x) => x.id === s.id)
+                return (
+                  <span key={s.id} className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPickSizes((prev) => pick ? prev.filter((x) => x.id !== s.id) : [...prev, { ...s, qty: '' }])}
+                      className={`px-4 py-1.5 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${pick ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
+                    >
+                      {s.name}
+                    </button>
+                    {pick && (
+                      <input
+                        type="number"
+                        min="0"
+                        value={pick.qty}
+                        placeholder={t('products.qty')}
+                        onChange={(e) => setPickSizes((prev) => prev.map((x) => x.id === s.id ? { ...x, qty: e.target.value } : x))}
+                        className="w-16 bg-transparent border border-outline-variant rounded-[4px] text-center text-body-md font-body-md text-primary py-1 focus:border-secondary focus:outline-none"
+                      />
+                    )}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+          <div className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+            {t('products.colors')}
+            <div className="mt-2 flex flex-wrap gap-2 items-center">
+              {colors.map((c) => {
+                const on = pickColors.some((x) => x.id === c.id)
                 return (
                   <button
-                    key={s.id}
+                    key={c.id}
                     type="button"
-                    onClick={() => setPickSizes((prev) => on ? prev.filter((x) => x.id !== s.id) : [...prev, s])}
+                    onClick={() => setPickColors((prev) => on ? prev.filter((x) => x.id !== c.id) : [...prev, c])}
                     className={`px-4 py-1.5 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${on ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
                   >
-                    {s.name}
+                    {c.name}
                   </button>
                 )
               })}
+              {pickColors.filter((c) => !c.id).map((c) => (
+                <span key={c.name} className="flex items-center gap-1.5 px-4 py-1.5 border border-secondary bg-secondary text-on-secondary rounded-[4px]">
+                  <span className="font-label-sm text-label-sm uppercase tracking-wider">{c.name}</span>
+                  <button type="button" onClick={() => setPickColors((prev) => prev.filter((x) => x.name !== c.name))} className="text-on-secondary/70 hover:text-on-secondary">×</button>
+                </span>
+              ))}
+            </div>
+            <div className="mt-2 flex gap-2">
+              <input
+                value={customColor}
+                placeholder={t('products.custom_color')}
+                onChange={(e) => setCustomColor(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && customColor.trim()) {
+                    setPickColors((prev) => [...prev, { name: customColor.trim() }])
+                    setCustomColor('')
+                  }
+                }}
+                className="flex-1 min-w-40 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (customColor.trim()) {
+                    setPickColors((prev) => [...prev, { name: customColor.trim() }])
+                    setCustomColor('')
+                  }
+                }}
+                className="px-4 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors"
+              >
+                {t('products.add_color')}
+              </button>
             </div>
           </div>
           <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
@@ -278,6 +360,16 @@ export default function Products() {
               {t('common.save')}
             </button>
           </div>
+          <label className="block col-span-full font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+            {t('products.description')}
+            <textarea
+              rows={3}
+              className={inputClass + ' mt-2 resize-y'}
+              value={form.description}
+              placeholder={t('products.description_placeholder')}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+          </label>
           <label className="block col-span-full font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('products.photos')}
             <input
