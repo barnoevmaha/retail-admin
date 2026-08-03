@@ -6,6 +6,7 @@ export default function ImageGallery() {
   const [products, setProducts] = useState([])
   const [productId, setProductId] = useState('')
   const [images, setImages] = useState([])
+  const [url, setUrl] = useState('')
   const fileRef = useRef()
 
   useEffect(() => {
@@ -26,6 +27,15 @@ export default function ImageGallery() {
       const res = await api.post(`/products/${productId}/images/upload`, fd)
       setImages((prev) => [...prev, res.data])
       fileRef.current.value = ''
+    } catch {}
+  }
+
+  const addByUrl = async () => {
+    if (!url.trim() || !productId) return
+    try {
+      const res = await api.post(`/products/${productId}/images/`, { image_url: url.trim(), is_main: false })
+      setImages((prev) => [...prev, res.data])
+      setUrl('')
     } catch {}
   }
 
@@ -74,6 +84,18 @@ export default function ImageGallery() {
             />
             <button onClick={upload} className="px-8 py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 active:scale-[0.99] transition-all">
               {t('images.upload_image')}
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://example.com/photo.jpg"
+              className="flex-1 min-w-60 bg-transparent border border-outline-variant focus:border-secondary outline-none px-3 py-2 font-body-md text-body-md text-on-surface-variant"
+            />
+            <button onClick={addByUrl} className="px-8 py-3 border border-outline-variant font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant hover:border-secondary hover:text-secondary transition-all">
+              {t('images.add_by_url')}
             </button>
           </div>
 
