@@ -9,7 +9,7 @@ export default function Products() {
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
   const [formOpen, setFormOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', description: '', category_id: '', brand_id: '' })
+  const [form, setForm] = useState({ name: '', description: '', category_id: '', brand_id: '', image_url: '' })
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
   const [saveMsg, setSaveMsg] = useState('')
@@ -28,15 +28,23 @@ export default function Products() {
   }, [])
 
   const create = async () => {
+    if (!form.name.trim()) {
+      setSaveMsg(t('products.name_required'))
+      return
+    }
     try {
-      await api.post('/products/', {
+      const { data } = await api.post('/products/', {
         name: form.name.trim(),
         description: form.description.trim() || null,
         category_id: form.category_id ? Number(form.category_id) : null,
         brand_id: form.brand_id ? Number(form.brand_id) : null,
       })
+      const url = form.image_url.trim()
+      if (url) {
+        await api.post(`/products/${data.id}/images`, { image_url: url, is_main: true }).catch(() => {})
+      }
       setFormOpen(false)
-      setForm({ name: '', description: '', category_id: '', brand_id: '' })
+      setForm({ name: '', description: '', category_id: '', brand_id: '', image_url: '' })
       setSaveMsg('')
       load()
     } catch (err) {
@@ -101,6 +109,15 @@ export default function Products() {
               <option value=""></option>
               {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
+          </label>
+          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+            {t('products.image_url')}
+            <input
+              className={inputClass + ' mt-2'}
+              value={form.image_url}
+              placeholder="https://..."
+              onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+            />
           </label>
           <button
             onClick={create}
