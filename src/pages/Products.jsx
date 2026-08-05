@@ -68,6 +68,7 @@ export default function Products() {
   const [includeQty, setIncludeQty] = useState(false)
   const [includeQtyPanel, setIncludeQtyPanel] = useState(false)
   const [newCat, setNewCat] = useState('')
+  const [wizError, setWizError] = useState('')
 
   const load = () => {
     api.get('/products/', {
@@ -110,6 +111,20 @@ export default function Products() {
     return tr === `category.${c.slug}` ? c.name : tr
   }
 
+  const validateStep = (step) => {
+    if (step === 0 && !form.name.trim()) return t('products.name_required')
+    if (step === 0 && (Number(form.selling_price) < 0 || Number(form.purchase_price) < 0)) return t('products.price_invalid')
+    if (step === 1 && !pickSizes.length) return t('products.size_required')
+    return ''
+  }
+
+  const nextStep = () => {
+    const err = validateStep(wizStep)
+    if (err) { setWizError(err); return }
+    setWizError('')
+    setWizStep(wizStep + 1)
+  }
+
   const addCat = async () => {
     if (!newCat.trim()) return
     try {
@@ -117,6 +132,7 @@ export default function Products() {
       setCategories((prev) => [...prev, data])
       setForm((prev) => ({ ...prev, category_id: String(data.id) }))
       setNewCat('')
+      setWizError('')
     } catch (err) {
       setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
     }
@@ -149,6 +165,10 @@ export default function Products() {
   const create = async () => {
     if (!form.name.trim()) {
       setSaveMsg(t('products.name_required'))
+      return
+    }
+    if (!pickSizes.length) {
+      setSaveMsg(t('products.size_required'))
       return
     }
     try {
@@ -207,6 +227,7 @@ export default function Products() {
       setPickColors([])
       setCustomColor('')
       setSaveMsg('')
+      setWizError('')
       load()
     } catch (err) {
       setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
@@ -365,14 +386,10 @@ export default function Products() {
             <div className={wizField}>
               {t('products.category')}
               <div className="mt-2 flex flex-wrap gap-2 items-center">
-                {categories.map((c) => {
-                  const on = form.category_id === String(c.id)
-                  return (
-                    <button key={c.id} type="button" onClick={() => setForm({ ...form, category_id: on ? '' : String(c.id) })} className={chipBtn(on)}>{catName(c)}</button>
-                  )
-                })}
+                <Dropdown value={form.category_id} onChange={(v) => setForm({ ...form, category_id: v })}
+                  options={[{ value: '', label: '—' }, ...categories.map((c) => ({ value: String(c.id), label: catName(c) }))]} />
                 {categories.length === 0 && <span className="font-body-md text-body-md text-on-surface-variant">{t('products.no_categories')}</span>}
-                <div className="flex gap-2 ml-auto">
+                <div className="flex gap-2">
                   <input value={newCat} placeholder={t('products.new_category')} onChange={(e) => setNewCat(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addCat()}
                     className="w-36 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
                   <button type="button" onClick={addCat} className="px-3 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
@@ -447,20 +464,18 @@ export default function Products() {
           <div>
             <span className={wizField + ' block mb-3'}>{t('products.pick_color')}</span>
             <div className="flex flex-wrap gap-2 items-center">
-              {colors.map((c) => {
-                const on = pickColors[0]?.id === c.id
-                return (
-                  <button key={c.id} type="button" onClick={() => setPickColors(on ? [] : [c])} className={chipBtn(on)}>{c.name}</button>
-                )
-              })}
+              <Dropdown label={t('products.variant_color')}
+                value={pickColors[0] ? String(pickColors[0].id) : ''}
+                onChange={(v) => { const c = colors.find((x) => String(x.id) === v); setPickColors(c ? [c] : []) }}
+                options={[{ value: '', label: '—' }, ...colors.map((c) => ({ value: String(c.id), label: c.name }))]} />
               {colors.length === 0 && <span className="font-body-md text-body-md text-on-surface-variant">{t('products.no_colors')}</span>}
-            </div>
-            <div className="mt-5 flex gap-2 max-w-sm">
-              <input value={newColor} placeholder={t('colors.new_placeholder')} onChange={(e) => setNewColor(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addColor()}
-                className="flex-1 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
-              <button onClick={addColor} className="px-4 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
-                {t('products.add_color')}
-              </button>
+              <div className="flex gap-2 ml-auto">
+                <input value={newColor} placeholder={t('colors.new_placeholder')} onChange={(e) => setNewColor(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addColor()}
+                  className="w-36 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
+                <button onClick={addColor} className="px-3 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
+                  {t('products.add_color')}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -531,6 +546,7 @@ export default function Products() {
         )}
       </div>
 
+      {wizError && <p className="px-6 pb-2 font-body-sm text-body-sm text-error">{wizError}</p>}
       {saveMsg && <p className="px-6 pb-2 font-body-sm text-body-sm text-error">{saveMsg}</p>}
 
       <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant bg-surface-container">
@@ -540,7 +556,7 @@ export default function Products() {
           </button>
         ) : <span />}
         {wizStep < 4 ? (
-          <button onClick={() => { setWizStep(wizStep + 1); setSaveMsg('') }} className="px-8 py-2 bg-secondary text-on-secondary rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider hover:opacity-90 transition-opacity">
+          <button onClick={nextStep} className="px-8 py-2 bg-secondary text-on-secondary rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider hover:opacity-90 transition-opacity">
             {t('common.next')}
           </button>
         ) : (
