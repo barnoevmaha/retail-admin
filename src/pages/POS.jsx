@@ -326,11 +326,11 @@ export default function POS() {
               <div className="text-on-surface-variant text-sm text-center py-2">{t('pos.no_suspended')}</div>
             ) : (
               suspendedSessions.map((s) => (
-                <div key={s.id} className="flex justify-between items-center py-1 border-b border-outline-variant/30 text-sm">
-                  <div className="min-w-0">
-                    <span className="text-on-surface-variant text-xs">{new Date(s.created_at).toLocaleString()}</span>
-                    <span className="ml-2 font-bold text-on-surface">${s.total.toFixed(2)}</span>
-                    <span className="ml-2 text-on-surface-variant text-xs truncate">{s.customer_name || t('pos.walk_in')}</span>
+                <div key={s.id} className="flex flex-wrap justify-between items-center gap-x-2 gap-y-1 py-1 border-b border-outline-variant/30 text-sm">
+                  <div className="flex flex-wrap items-center gap-x-2 min-w-0">
+                    <span className="text-on-surface-variant text-xs whitespace-nowrap">{new Date(s.created_at).toLocaleString()}</span>
+                    <span className="font-bold text-on-surface">${s.total.toFixed(2)}</span>
+                    <span className="text-on-surface-variant text-xs">{s.customer_name || t('pos.walk_in')}</span>
                   </div>
                   <div className="flex gap-1 shrink-0">
                     <button onClick={() => resumeSale(s)} className="px-2 py-1 border border-secondary/40 text-secondary text-xs hover:bg-secondary hover:text-on-secondary transition-colors">{t('pos.resume')}</button>
