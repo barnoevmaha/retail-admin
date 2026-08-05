@@ -25,6 +25,7 @@ import SettingsPage from '../pages/SettingsPage'
 import ChangePassword from '../pages/ChangePassword'
 import CompanyPage from '../pages/CompanyPage'
 import ImageGallery from '../pages/ImageGallery'
+import Employees from '../pages/Employees'
 
 const groups = [
   {
@@ -75,6 +76,7 @@ const groups = [
       { to: '/settings', key: 'nav.settings', icon: 'settings' },
       { to: '/settings/change-password', key: 'nav.change_password', icon: 'lock' },
       { to: '/company', key: 'nav.company', icon: 'apartment' },
+      { to: '/employees', key: 'nav.employees', icon: 'badge', roles: ['super_admin'] },
     ],
   },
 ]
@@ -135,7 +137,7 @@ export default function Layout() {
           {groups.map((g) => (
             <div key={g.label} className="flex flex-col gap-1 mb-2">
               <div className="px-4 pt-3 pb-1 font-label-sm text-label-sm text-on-surface-variant/60 uppercase tracking-wider">{g.label}</div>
-              {g.items.map((item) => (
+              {g.items.filter((i) => !i.roles || i.roles.includes(user?.role)).map((item) => (
                 <Link key={item.to} to={item.to} className={itemClass(location.pathname === item.to)}>
                   <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
                   <span>{t(item.key)}</span>
@@ -186,6 +188,7 @@ export default function Layout() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="settings/change-password" element={<ChangePassword />} />
             <Route path="company" element={<CompanyPage />} />
+            <Route path="employees" element={<Employees />} />
             <Route path="product-images" element={<ImageGallery />} />
           </Routes>
         </div>
