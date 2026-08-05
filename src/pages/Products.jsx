@@ -43,7 +43,7 @@ export default function Products() {
   const [status, setStatus] = useState('')
   const [sel, setSel] = useState(new Set())
   const [formOpen, setFormOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', description: '', category_id: '', brand_id: '', image_url: '', purchase_price: '', selling_price: '' })
+  const [form, setForm] = useState({ name: '', description: '', category_id: '', brand_id: '', purchase_price: '', selling_price: '' })
   const [files, setFiles] = useState([])
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
@@ -61,6 +61,10 @@ export default function Products() {
   const [newColor, setNewColor] = useState('')
   const [mainImg, setMainImg] = useState(0)
   const [confirmDel, setConfirmDel] = useState(null)
+  const [urlImages, setUrlImages] = useState([])
+  const [newUrl, setNewUrl] = useState('')
+  const [bulkQty, setBulkQty] = useState('')
+  const [bulkQtyPanel, setBulkQtyPanel] = useState('')
 
   const load = () => {
     api.get('/products/', {
@@ -120,19 +124,19 @@ export default function Products() {
         category_id: form.category_id ? Number(form.category_id) : null,
         brand_id: form.brand_id ? Number(form.brand_id) : null,
       })
-      const url = form.image_url.trim()
-      if (url && !files.length) {
-        await api.post(`/products/${data.id}/images/`, { image_url: url, is_main: true }).catch(() => {})
-      }
-      if (files.length) {
-        await Promise.all(files.map((f, i) => {
-          const fd = new FormData()
-          fd.append('file', f)
-          fd.append('sort_order', String(i))
-          fd.append('is_main', String(i === mainImg))
-          return api.post(`/products/${data.id}/images/upload`, fd).catch(() => {})
-        }))
-      }
+      const urls = urlImages.map((u) => u.trim()).filter(Boolean)
+      const total = files.length + urls.length
+      await Promise.all(files.map((f, i) => {
+        const fd = new FormData()
+        fd.append('file', f)
+        fd.append('sort_order', String(i))
+        fd.append('is_main', String(total > 0 && i === mainImg))
+        return api.post(`/products/${data.id}/images/upload`, fd).catch(() => {})
+      }))
+      await Promise.all(urls.map((url, j) => {
+        const pos = files.length + j
+        return api.post(`/products/${data.id}/images/`, { image_url: url, is_main: total > 0 && pos === mainImg }).catch(() => {})
+      }))
       const color = pickColors[0]?.name || null
       const created = []
       for (const s of pickSizes) {
@@ -155,9 +159,13 @@ export default function Products() {
       }
       setFormOpen(false)
       setWizStep(0)
-      setForm({ name: '', description: '', category_id: '', brand_id: '', image_url: '', purchase_price: '', selling_price: '' })
+      setForm({ name: '', description: '', category_id: '', brand_id: '', purchase_price: '', selling_price: '' })
       setFiles([])
+      setUrlImages([])
+      setNewUrl('')
       setMainImg(0)
+      setBulkQty('')
+      setBulkQtyPanel('')
       setPickSizes([])
       setPickColors([])
       setCustomColor('')
@@ -173,7 +181,24 @@ export default function Products() {
     e.target.value = ''
   }
 
-  const removeFile = (i) => setFiles((prev) => prev.filter((_, idx) => idx !== i))
+  const removeFile = (i) => setFiles((prev) => {
+    const next = prev.filter((_, idx) => idx !== i)
+    setMainImg((m) => Math.min(m, next.length + urlImages.length - 1))
+    return next
+  })
+
+  const addUrl = () => {
+    const u = newUrl.trim()
+    if (!u) return
+    setUrlImages((prev) => [...prev, u])
+    setNewUrl('')
+  }
+
+  const removeUrl = (i) => setUrlImages((prev) => {
+    const next = prev.filter((_, idx) => idx !== i)
+    setMainImg((m) => Math.min(m, files.length + next.length - 1))
+    return next
+  })
 
   const toggle = (id) => setSel((prev) => {
     const s = new Set(prev)
@@ -237,6 +262,7 @@ export default function Products() {
         await api.post(`/adjustments/${adj.data.id}/confirm`)
       }
       setVf({ sizes: [], colors: [], customColor: '', purchase: '', selling: '' })
+      setBulkQtyPanel('')
       setSaveMsg('')
       load()
     } catch (err) {
@@ -339,6 +365,19 @@ export default function Products() {
               })}
               {sizes.length === 0 && <span className="font-body-md text-body-md text-on-surface-variant">{t('products.no_sizes')}</span>}
             </div>
+            {pickSizes.length > 0 && (
+              <div className="mt-5 flex items-center gap-3 max-w-xl">
+                <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider shrink-0">{t('products.bulk_qty')}</span>
+                <input type="number" min="0" value={bulkQty} placeholder={t('products.qty')}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setBulkQty(v)
+                    setPickSizes((prev) => prev.map((x) => ({ ...x, qty: v })))
+                  }}
+                  className="w-20 bg-transparent border border-outline-variant rounded-[4px] text-center text-body-md font-body-md text-primary py-1.5 focus:border-secondary focus:outline-none" />
+                <span className="font-body-sm text-body-sm text-on-surface-variant">{t('products.bulk_qty_hint')}</span>
+              </div>
+            )}
             <div className="mt-5 flex gap-2 max-w-sm">
               <input value={newSize} placeholder={t('sizes.new_placeholder')} onChange={(e) => setNewSize(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addSize()}
                 className="flex-1 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
@@ -373,16 +412,22 @@ export default function Products() {
 
         {wizStep === 3 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <label className={wizField}>
-              {t('products.image_url')}
-              <input className={inputClass + ' mt-2'} value={form.image_url} placeholder="https://..." onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
-            </label>
+            <div className={wizField}>
+              {t('products.image_urls')}
+              <div className="mt-2 flex gap-2">
+                <input value={newUrl} placeholder="https://..." onChange={(e) => setNewUrl(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addUrl()}
+                  className="flex-1 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
+                <button onClick={addUrl} className="px-4 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
+                  {t('common.add')}
+                </button>
+              </div>
+            </div>
             <label className={wizField}>
               {t('products.photos')}
               <input type="file" accept="image/*" multiple onChange={addFiles}
                 className="mt-2 text-sm text-on-surface file:mr-3 file:px-3 file:py-1.5 file:border-0 file:rounded-[4px] file:bg-surface-container-highest file:text-primary file:font-label-sm file:text-label-sm cursor-pointer" />
             </label>
-            {files.length > 0 && (
+            {files.length + urlImages.length > 0 && (
               <div className="md:col-span-2">
                 <span className={wizField + ' block mb-3'}>{t('products.main_image')}</span>
                 <div className="flex flex-wrap gap-3">
@@ -397,6 +442,20 @@ export default function Products() {
                       </button>
                     </div>
                   ))}
+                  {urlImages.map((u, j) => {
+                    const pos = files.length + j
+                    return (
+                      <div key={u + j} className="relative w-20 h-24 border border-outline-variant rounded-[4px] overflow-hidden bg-surface-container-high">
+                        <img src={u} className="w-full h-full object-cover" alt="" onError={(e) => { e.currentTarget.classList.add('opacity-40'); e.currentTarget.removeAttribute('src') }} />
+                        <button type="button" onClick={() => removeUrl(j)}
+                          className="absolute top-1 right-1 w-5 h-5 bg-background/70 text-error rounded-full text-xs leading-none flex items-center justify-center hover:bg-error hover:text-on-error transition-colors">×</button>
+                        <button type="button" onClick={() => setMainImg(pos)} title={t('products.main_image')}
+                          className={`absolute bottom-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors ${pos === mainImg ? 'bg-secondary text-on-secondary' : 'bg-background/70 text-on-surface-variant hover:text-secondary'}`}>
+                          <span className="material-symbols-outlined text-sm">star</span>
+                        </button>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -412,7 +471,7 @@ export default function Products() {
             <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.sizes')}</span>
             <span className="font-body-md text-body-md text-primary">{pickSizes.map((s) => `${s.name}${s.qty ? ` ×${s.qty}` : ''}`).join(', ') || '—'}</span>
             <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.colors')}</span><span className="font-body-md text-body-md text-primary">{pickColors[0]?.name || '—'}</span>
-            <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.photos')}</span><span className="font-body-md text-body-md text-primary">{files.length ? `${files.length} ${t('common.products')}` : form.image_url ? t('products.url_image') : '—'}</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.photos')}</span><span className="font-body-md text-body-md text-primary">{files.length + urlImages.length ? `${files.length + urlImages.length} ${t('common.products')}` : '—'}</span>
           </div>
         )}
       </div>
@@ -674,6 +733,23 @@ export default function Products() {
                                   )
                                 })}
                               </div>
+                              {vf.sizes.length > 0 && (
+                                <div className="mt-2.5 flex items-center gap-2">
+                                  <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('products.bulk_qty')}</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={bulkQtyPanel}
+                                    placeholder={t('products.qty')}
+                                    onChange={(e) => {
+                                      const v = e.target.value
+                                      setBulkQtyPanel(v)
+                                      setVf((prev) => ({ ...prev, sizes: prev.sizes.map((x) => ({ ...x, qty: v })) }))
+                                    }}
+                                    className="w-16 bg-transparent border border-outline-variant rounded-[4px] text-center text-body-md font-body-md text-primary py-1 focus:border-secondary focus:outline-none"
+                                  />
+                                </div>
+                              )}
                             </div>
                             <div className="sm:col-span-2 md:col-span-2">
                               <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">{t('products.colors')}</span>
