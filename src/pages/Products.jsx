@@ -36,7 +36,7 @@ const Dropdown = ({ label, options, value, onChange }) => {
   )
 }
 
-const ColorPicker = ({ colors, selected, onSelect, onDelete, onAdd, emptyLabel, bare }) => {
+const ColorPicker = ({ colors, selected, onSelect, onDelete, onAdd, emptyLabel }) => {
   const [name, setName] = useState('')
   const [hex, setHex] = useState('')
   const [err, setErr] = useState('')
@@ -63,18 +63,24 @@ const ColorPicker = ({ colors, selected, onSelect, onDelete, onAdd, emptyLabel, 
   )
   return (
     <div>
-      <div className="flex flex-wrap gap-2">
+      <div
+        className="flex gap-2 overflow-x-auto pb-2 -mb-1.5"
+        onWheel={(e) => {
+          const el = e.currentTarget
+          if (el.scrollWidth > el.clientWidth && e.deltaY) { el.scrollLeft += e.deltaY }
+        }}
+      >
         {colors.map((c) => {
-          const on = !bare && selected?.id === c.id
+          const on = selected?.id === c.id
           return (
-            <div key={c.id} role={bare ? undefined : 'button'} tabIndex={bare ? undefined : 0}
-              onClick={bare ? undefined : () => onSelect(c)}
-              onKeyDown={bare ? undefined : (e) => e.key === 'Enter' && onSelect(c)}
-              className={`flex items-center gap-2 pl-2 pr-1 py-1 border rounded-[4px] transition-colors ${bare ? '' : 'cursor-pointer'} ${on ? 'border-secondary bg-secondary/10' : 'border-outline-variant hover:border-secondary'}`}>
+            <div key={c.id} role="button" tabIndex={0}
+              onClick={() => onSelect(c)}
+              onKeyDown={(e) => e.key === 'Enter' && onSelect(c)}
+              className={`group flex items-center gap-1.5 pl-2 pr-1 py-1 border rounded-[4px] shrink-0 transition-colors cursor-pointer ${on ? 'border-secondary bg-secondary/10' : 'border-outline-variant hover:border-secondary'}`}>
               <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0" style={{ background: c.hex_value || '#1c1b1b' }} />
-              <span className="font-body-md text-body-md text-primary">{c.name}</span>
+              <span className="font-body-md text-body-md text-primary whitespace-nowrap">{c.name}</span>
               <button type="button" title={t('common.delete')} onClick={(e) => { e.stopPropagation(); onDelete(c) }}
-                className="text-on-surface-variant hover:text-error transition-colors flex items-center">
+                className="text-on-surface-variant hover:text-error transition-opacity duration-200 flex items-center opacity-0 group-hover:opacity-100">
                 <span className="material-symbols-outlined text-[16px]">delete</span>
               </button>
             </div>
@@ -652,12 +658,6 @@ export default function Products() {
           {t('products.new')}
         </button>
       </div>
-
-      <section className="bg-surface border border-outline-variant rounded-xl p-5">
-        <h3 className="font-headline-sm text-headline-sm text-primary mb-3">{t('colors.title')}</h3>
-        <ColorPicker bare colors={colors} selected={null} onSelect={() => {}}
-          onDelete={deleteColor} onAdd={addColor} emptyLabel={t('products.no_colors')} />
-      </section>
 
       {formOpen && renderWizard()}
 
