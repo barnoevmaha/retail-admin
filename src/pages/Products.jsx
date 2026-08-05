@@ -105,6 +105,11 @@ export default function Products() {
     return { ...prev, sizes: prev.sizes.filter((x) => x.id !== s.id) }
   })
 
+  const catName = (c) => {
+    const tr = t(`category.${c.slug}`)
+    return tr === `category.${c.slug}` ? c.name : tr
+  }
+
   const addCat = async () => {
     if (!newCat.trim()) return
     try {
@@ -363,7 +368,7 @@ export default function Products() {
                 {categories.map((c) => {
                   const on = form.category_id === String(c.id)
                   return (
-                    <button key={c.id} type="button" onClick={() => setForm({ ...form, category_id: on ? '' : String(c.id) })} className={chipBtn(on)}>{c.name}</button>
+                    <button key={c.id} type="button" onClick={() => setForm({ ...form, category_id: on ? '' : String(c.id) })} className={chipBtn(on)}>{catName(c)}</button>
                   )
                 })}
                 {categories.length === 0 && <span className="font-body-md text-body-md text-on-surface-variant">{t('products.no_categories')}</span>}
@@ -516,7 +521,7 @@ export default function Products() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 max-w-2xl">
             <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.name')}</span><span className="font-body-md text-body-md text-primary">{form.name || '—'}</span>
             <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.brand')}</span><span className="font-body-md text-body-md text-primary">{brands.find((b) => String(b.id) === form.brand_id)?.name || '—'}</span>
-            <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.category')}</span><span className="font-body-md text-body-md text-primary">{categories.find((c) => String(c.id) === form.category_id)?.name || '—'}</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.category')}</span><span className="font-body-md text-body-md text-primary">{categories.find((c) => String(c.id) === form.category_id) ? catName(categories.find((c) => String(c.id) === form.category_id)) : '—'}</span>
             <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.price')}</span><span className="font-body-md text-body-md text-primary">{form.selling_price ? `$${Number(form.selling_price).toLocaleString()}` : '—'}</span>
             <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.sizes')}</span>
             <span className="font-body-md text-body-md text-primary">{pickSizes.map((s) => `${s.name}${s.qty ? ` ×${s.qty}` : ''}`).join(', ') || '—'}</span>
