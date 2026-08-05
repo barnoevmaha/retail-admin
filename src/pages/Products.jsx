@@ -540,7 +540,7 @@ export default function Products() {
               onSelect={(c) => setPickColors(c ? [c] : [])}
               onDelete={deleteColor}
               onAdd={addColor}
-              emptyLabel={t('products.pick_color')} />
+              emptyLabel="—" />
           </div>
         )}
 
@@ -900,7 +900,7 @@ export default function Products() {
                                   onSelect={(c) => setVf((prev) => ({ ...prev, colors: c ? [c] : [] }))}
                                   onDelete={deleteColor}
                                   onAdd={addColor}
-                                  emptyLabel={t('products.no_colors')} />
+                                  emptyLabel="—" />
                               </div>
                             </div>
                             <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
