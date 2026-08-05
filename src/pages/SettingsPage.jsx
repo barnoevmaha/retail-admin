@@ -56,7 +56,7 @@ export default function SettingsPage() {
                 onChange={(e) => update(key, e.target.value)}
                 onBlur={(e) => save(key, e.target.value)}
               />
-              {hint && <p className="font-label-sm text-label-sm text-on-surface-variant/40 mt-1">{t(hintKey)}</p>}
+              {hintKey && <p className="font-label-sm text-label-sm text-on-surface-variant/40 mt-1">{t(hintKey)}</p>}
             </div>
           ))}
         </div>
