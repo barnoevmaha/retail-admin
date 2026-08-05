@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import api from '../api/client'
+import api, { fileUrl } from '../api/client'
 import { t } from '../i18n'
 
 const imgSrc = (p) =>
-  p.images?.[0]?.image_url || (typeof p.image_url === 'string' ? p.image_url : null)
+  fileUrl(p.images?.[0]?.image_url || (typeof p.image_url === 'string' ? p.image_url : null))
 
 const Dropdown = ({ label, options, value, onChange }) => {
   const [open, setOpen] = useState(false)
@@ -505,7 +505,7 @@ export default function Products() {
                   <td className="py-3 px-4 align-middle text-center">
                     <button
                       onClick={() => del(p.id)}
-                      className="w-8 h-8 flex items-center justify-center rounded-[4px] text-on-surface-variant opacity-0 group-hover:opacity-100 hover:text-error hover:bg-surface-container-highest transition-all"
+                      className="w-8 h-8 flex items-center justify-center rounded-[4px] text-on-surface-variant hover:text-error hover:bg-surface-container-highest transition-all"
                       title={t('common.delete')}
                     >
                       <span className="material-symbols-outlined text-sm">delete</span>

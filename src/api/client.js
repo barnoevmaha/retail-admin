@@ -1,13 +1,19 @@
 import axios from 'axios'
 
-// ponytail: if a stale http:// VITE_API_URL is baked in, same-origin proxy is safer than a blocked mixed-content call
+// ponytail: hardcoded fallback to the working backend — admin nginx /api proxy has a dead BACKEND_URL.
+// Remove this fallback (back to '/api') once BACKEND_URL is fixed on the Railway admin service.
+const DEFAULT_API_URL = 'https://retail-backend-production-aa62.up.railway.app/api'
+
 const configured = import.meta.env.VITE_API_URL || ''
 const baseURL =
   configured && !(configured.startsWith('http://') && typeof window !== 'undefined' && window.location.protocol === 'https:')
     ? configured
-    : '/api'
+    : DEFAULT_API_URL
 
 const api = axios.create({ baseURL })
+
+// ponytail: backend returns relative /uploads/... paths; resolve them against the backend origin
+export const fileUrl = (u) => (u && u.startsWith('/uploads/') ? baseURL.replace(/\/api$/, '') + u : u)
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')

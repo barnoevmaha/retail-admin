@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../api/client'
+import api, { fileUrl } from '../api/client'
 import { t } from '../i18n'
 
 const firstVariant = (p) => {
@@ -171,7 +171,7 @@ export default function POS() {
   const reprintReceipt = async (orderId) => {
     const id = orderId || lastOrderId
     if (!id) { setMsg(t('pos.no_receipt')); return }
-    window.open(`/api/receipts/${id}`, '_blank')
+    window.open(`${api.defaults.baseURL}/receipts/${id}`, '_blank')
   }
 
   const toggleSuspended = () => {
@@ -256,7 +256,7 @@ export default function POS() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8">
             {shownProducts.map((p) => {
               const v = firstVariant(p)
-              const img = p.images?.[0]?.image_url || (typeof p.image_url === 'string' ? p.image_url : null)
+              const img = fileUrl(p.images?.[0]?.image_url || (typeof p.image_url === 'string' ? p.image_url : null))
               return (
                 <div key={p.id} className="group cursor-pointer" onClick={() => { addVariant(v, p.name) }}>
                   <div className="relative aspect-[4/5] bg-surface-container overflow-hidden mb-3 border border-outline-variant/30">

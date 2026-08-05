@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import api from '../api/client'
+import api, { fileUrl } from '../api/client'
 import { t } from '../i18n'
 
 export default function ImageGallery() {
@@ -103,7 +103,7 @@ export default function ImageGallery() {
             {images.map((img) => (
               <div key={img.id} className="border border-outline-variant bg-surface-container-low p-3 group">
                 <div className="relative aspect-square overflow-hidden mb-3">
-                  <img src={img.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={fileUrl(img.image_url)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                   {img.is_main && (
                     <span className="absolute top-2 left-2 px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-[2px] bg-secondary text-on-secondary">
                       {t('images.main')}
