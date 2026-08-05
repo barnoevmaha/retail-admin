@@ -392,19 +392,16 @@ export default function Products() {
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('products.include_qty')}</span>
               </label>
             )}
-            {pickSizes.length > 0 && (
-              <div className="mt-4 flex items-center gap-3 max-w-xl">
-                <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider shrink-0">{t('products.bulk_qty')}</span>
-                <input type="number" min="0" value={bulkQty} placeholder={t('products.qty')}
-                  onChange={(e) => {
-                    const v = e.target.value
-                    setBulkQty(v)
-                    setPickSizes((prev) => prev.map((x) => ({ ...x, qty: v })))
-                  }}
-                  className="w-20 bg-transparent border border-outline-variant rounded-[4px] text-center text-body-md font-body-md text-primary py-1.5 focus:border-secondary focus:outline-none" />
-                <span className="font-body-sm text-body-sm text-on-surface-variant">{t('products.bulk_qty_hint')}</span>
-              </div>
-            )}
+            <div className="mt-4 flex items-center gap-3 max-w-xl">
+              <input type="number" min="0" value={bulkQty} placeholder={t('products.qty')}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setBulkQty(v)
+                  setPickSizes((prev) => prev.map((x) => ({ ...x, qty: v })))
+                }}
+                className="w-20 bg-transparent border border-outline-variant rounded-[4px] text-center text-body-md font-body-md text-primary py-1.5 focus:border-secondary focus:outline-none" />
+              <span className="font-body-sm text-body-sm text-on-surface-variant">{t('products.bulk_qty_hint')}</span>
+            </div>
             <div className="mt-5 flex gap-2 max-w-sm">
               <input value={newSize} placeholder={t('sizes.new_placeholder')} onChange={(e) => setNewSize(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addSize()}
                 className="flex-1 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
@@ -770,7 +767,6 @@ export default function Products() {
                               )}
                               {vf.sizes.length > 0 && (
                                 <div className="mt-2.5 flex items-center gap-2">
-                                  <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('products.bulk_qty')}</span>
                                   <input
                                     type="number"
                                     min="0"
