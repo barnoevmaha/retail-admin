@@ -36,6 +36,67 @@ const Dropdown = ({ label, options, value, onChange }) => {
   )
 }
 
+const ColorDropdown = ({ colors, selected, onSelect, onDelete, onAdd, emptyLabel }) => {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [hex, setHex] = useState('')
+  const [err, setErr] = useState('')
+  const submit = async () => {
+    const n = name.trim()
+    const h = hex.trim().replace(/^#/, '')
+    if (!n || !/^[0-9a-fA-F]{6}$/.test(h)) { setErr(t('colors.hex_invalid')); return }
+    if (await onAdd(n, `#${h.toUpperCase()}`)) { setName(''); setHex(''); setErr('') }
+  }
+  const row = 'flex items-center gap-2 px-2 py-1.5 hover:bg-surface-container-high transition-colors'
+  return (
+    <div>
+      <div className="relative inline-block">
+        <button type="button" onClick={() => setOpen(!open)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-high rounded-[4px] border border-outline-variant cursor-pointer hover:border-secondary transition-colors min-w-40">
+          {selected ? (
+            <>
+              <div className="w-4 h-4 rounded-full border border-outline-variant shrink-0" style={{ background: selected.hex_value || '#1c1b1b' }} />
+              <span className="font-body-md text-body-md text-primary">{selected.name}</span>
+            </>
+          ) : (
+            <span className="font-body-md text-body-md text-on-surface-variant">{emptyLabel}</span>
+          )}
+          <span className="material-symbols-outlined text-on-surface-variant text-sm ml-auto">{open ? 'expand_less' : 'expand_more'}</span>
+        </button>
+        {open && (
+          <div className="absolute z-10 mt-1 min-w-full max-h-72 overflow-auto bg-surface-container border border-outline-variant rounded-[4px] shadow-lg py-1">
+            <button type="button" onClick={() => { onSelect(null); setOpen(false) }} className={row + ' w-full text-left'}>
+              <span className="font-body-md text-body-md text-on-surface-variant">—</span>
+            </button>
+            {colors.map((c) => (
+              <div key={c.id} role="button" tabIndex={0} onClick={() => { onSelect(c); setOpen(false) }}
+                onKeyDown={(e) => e.key === 'Enter' && (onSelect(c), setOpen(false))} className={row + ' group cursor-pointer'}>
+                <div className="w-4 h-4 rounded-full border border-outline-variant shrink-0" style={{ background: c.hex_value || '#1c1b1b' }} />
+                <span className="flex-1 font-body-md text-body-md text-primary whitespace-nowrap">{c.name}</span>
+                <button type="button" title={t('common.delete')} onClick={(e) => { e.stopPropagation(); onDelete(c) }}
+                  className="text-on-surface-variant hover:text-error transition-opacity duration-200 flex items-center opacity-0 group-hover:opacity-100">
+                  <span className="material-symbols-outlined text-[16px]">delete</span>
+                </button>
+              </div>
+            ))}
+            {colors.length === 0 && <div className="px-4 py-2 font-body-md text-body-md text-on-surface-variant">{t('products.no_colors')}</div>}
+          </div>
+        )}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 max-w-xl">
+        <input value={name} placeholder={t('colors.new_placeholder')} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()}
+          className="flex-1 min-w-32 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
+        <input value={hex} placeholder={t('colors.hex_placeholder')} onChange={(e) => setHex(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()}
+          className="w-28 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
+        <button type="button" onClick={submit} className="px-4 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
+          {t('products.add_color')}
+        </button>
+      </div>
+      {err && <p className="mt-2 font-body-sm text-body-sm text-error">{err}</p>}
+    </div>
+  )
+}
+
 export default function Products() {
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
