@@ -43,7 +43,7 @@ export default function Products() {
   const [status, setStatus] = useState('')
   const [sel, setSel] = useState(new Set())
   const [formOpen, setFormOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', description: '', category_id: '', brand_id: '', image_url: '' })
+  const [form, setForm] = useState({ name: '', description: '', category_id: '', brand_id: '', image_url: '', purchase_price: '', selling_price: '' })
   const [files, setFiles] = useState([])
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
@@ -56,6 +56,11 @@ export default function Products() {
   const [openId, setOpenId] = useState(null)
   const [vf, setVf] = useState({ sizes: [], colors: [], customColor: '', purchase: '', selling: '' })
   const [descDraft, setDescDraft] = useState('')
+  const [wizStep, setWizStep] = useState(0)
+  const [newSize, setNewSize] = useState('')
+  const [newColor, setNewColor] = useState('')
+  const [mainImg, setMainImg] = useState(0)
+  const [confirmDel, setConfirmDel] = useState(null)
 
   const load = () => {
     api.get('/products/', {
@@ -79,6 +84,30 @@ export default function Products() {
     api.get('/colors/').then((r) => setColors(r.data)).catch(() => {})
   }, [])
 
+  const addSize = async () => {
+    if (!newSize.trim()) return
+    try {
+      const { data } = await api.post('/sizes/', { name: newSize.trim() })
+      setSizes((prev) => [...prev, data])
+      setPickSizes((prev) => [...prev, { ...data, qty: '' }])
+      setNewSize('')
+    } catch (err) {
+      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+    }
+  }
+
+  const addColor = async () => {
+    if (!newColor.trim()) return
+    try {
+      const { data } = await api.post('/colors/', { name: newColor.trim() })
+      setColors((prev) => [...prev, data])
+      setPickColors([data])
+      setNewColor('')
+    } catch (err) {
+      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+    }
+  }
+
   const create = async () => {
     if (!form.name.trim()) {
       setSaveMsg(t('products.name_required'))
@@ -92,7 +121,7 @@ export default function Products() {
         brand_id: form.brand_id ? Number(form.brand_id) : null,
       })
       const url = form.image_url.trim()
-      if (url) {
+      if (url && !files.length) {
         await api.post(`/products/${data.id}/images/`, { image_url: url, is_main: true }).catch(() => {})
       }
       if (files.length) {
@@ -100,7 +129,7 @@ export default function Products() {
           const fd = new FormData()
           fd.append('file', f)
           fd.append('sort_order', String(i))
-          fd.append('is_main', String(i === 0 && !url))
+          fd.append('is_main', String(i === mainImg))
           return api.post(`/products/${data.id}/images/upload`, fd).catch(() => {})
         }))
       }
@@ -112,6 +141,8 @@ export default function Products() {
           size_id: s.id,
           size: s.name,
           color,
+          purchase_price: Number(form.purchase_price) || 0,
+          selling_price: Number(form.selling_price) || 0,
         }).catch(() => null)
         if (v) created.push({ id: v.data.id, qty: Number(s.qty) || 0 })
       }
@@ -123,8 +154,10 @@ export default function Products() {
         await api.post(`/adjustments/${adj.data.id}/confirm`).catch(() => {})
       }
       setFormOpen(false)
-      setForm({ name: '', description: '', category_id: '', brand_id: '', image_url: '' })
+      setWizStep(0)
+      setForm({ name: '', description: '', category_id: '', brand_id: '', image_url: '', purchase_price: '', selling_price: '' })
       setFiles([])
+      setMainImg(0)
       setPickSizes([])
       setPickColors([])
       setCustomColor('')
@@ -153,33 +186,24 @@ export default function Products() {
     setSel((prev) => (prev.size === allIds.length && allIds.every((id) => prev.has(id)) ? new Set() : new Set(allIds)))
   }
 
-  const delVariant = async (vid) => {
-    if (!window.confirm(t('products.variant_delete_confirm'))) return
-    try {
-      await api.delete(`/variants/${vid}`)
-      setSaveMsg('')
-      load()
-    } catch (err) {
-      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
-    }
-  }
+  const delVariant = (vid) => setConfirmDel({ type: 'variant', id: vid })
 
-  const del = async (id) => {
-    if (!window.confirm(t('products.delete_confirm'))) return
-    try {
-      await api.delete(`/products/${id}`)
-      setSaveMsg('')
-      load()
-    } catch (err) {
-      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
-    }
-  }
+  const del = (id) => setConfirmDel({ type: 'product', id })
 
-  const delSelected = async () => {
+  const delSelected = () => {
     if (!sel.size) return
-    if (!window.confirm(t('products.delete_many_confirm', { n: sel.size }))) return
+    setConfirmDel({ type: 'many' })
+  }
+
+  const runDelete = async () => {
+    const c = confirmDel
+    setConfirmDel(null)
+    if (!c) return
     try {
-      await Promise.all([...sel].map((id) => api.delete(`/products/${id}`)))
+      if (c.type === 'variant') await api.delete(`/variants/${c.id}`)
+      if (c.type === 'product') await api.delete(`/products/${c.id}`)
+      if (c.type === 'many') await Promise.all([...sel].map((id) => api.delete(`/products/${id}`)))
+      setSaveMsg('')
       load()
     } catch (err) {
       setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
@@ -233,6 +257,187 @@ export default function Products() {
   const inputClass =
     'w-full bg-transparent border-0 border-b border-outline-variant text-on-surface font-body-lg text-body-lg py-2 px-0 focus:ring-0 focus:outline-none focus:border-secondary transition-colors duration-300'
 
+  const steps = [t('products.wiz_basics'), t('products.wiz_sizes'), t('products.wiz_colors'), t('products.wiz_images'), t('products.wiz_review')]
+
+  const wizField = 'block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest'
+
+  const chipBtn = (on) =>
+    `px-4 py-1.5 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${on ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`
+
+  const renderWizard = () => (
+    <div className="border border-outline-variant rounded-lg bg-surface-container-low overflow-hidden">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant bg-surface-container">
+        <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">{t('products.wizard')}</span>
+        <button onClick={() => { setFormOpen(false); setSaveMsg('') }} className="text-on-surface-variant hover:text-error transition-colors">
+          <span className="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2 px-6 pt-5">
+        {steps.map((label, i) => (
+          <button key={i} onClick={() => setWizStep(i)} className={`flex-1 min-w-32 flex items-center gap-2 px-3 py-2 rounded-[4px] border transition-colors text-left ${i === wizStep ? 'border-secondary bg-surface-container-high' : i < wizStep ? 'border-secondary/40' : 'border-outline-variant'}`}>
+            <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center font-label-sm text-label-sm border ${i === wizStep ? 'bg-secondary border-secondary text-on-secondary' : i < wizStep ? 'border-secondary/60 text-secondary' : 'border-outline-variant text-on-surface-variant'}`}>
+              {i < wizStep ? <span className="material-symbols-outlined text-sm">check</span> : i + 1}
+            </span>
+            <span className={`font-label-sm text-label-sm uppercase tracking-wider ${i === wizStep ? 'text-secondary' : 'text-on-surface-variant'}`}>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="p-6">
+        {wizStep === 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <label className={wizField + ' md:col-span-2'}>
+              {t('products.name')}
+              <input className={inputClass + ' mt-2'} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </label>
+            <label className={wizField}>
+              {t('products.brand')}
+              <div className="mt-2">
+                <Dropdown value={form.brand_id} onChange={(v) => setForm({ ...form, brand_id: v })}
+                  options={[{ value: '', label: '—' }, ...brands.map((b) => ({ value: String(b.id), label: b.name }))]} />
+              </div>
+            </label>
+            <label className={wizField}>
+              {t('products.category')}
+              <div className="mt-2">
+                <Dropdown value={form.category_id} onChange={(v) => setForm({ ...form, category_id: v })}
+                  options={[{ value: '', label: '—' }, ...categories.map((c) => ({ value: String(c.id), label: c.name }))]} />
+              </div>
+            </label>
+            <label className={wizField}>
+              {t('products.variant_purchase')}
+              <input className={inputClass + ' mt-2'} type="number" min="0" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} />
+            </label>
+            <label className={wizField}>
+              {t('products.variant_selling')}
+              <input className={inputClass + ' mt-2'} type="number" min="0" value={form.selling_price} onChange={(e) => setForm({ ...form, selling_price: e.target.value })} />
+            </label>
+            <label className={wizField + ' md:col-span-2'}>
+              {t('products.description')}
+              <textarea rows={3} className={inputClass + ' mt-2 resize-y'} value={form.description} placeholder={t('products.description_placeholder')} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            </label>
+          </div>
+        )}
+
+        {wizStep === 1 && (
+          <div>
+            <span className={wizField + ' block mb-3'}>{t('products.pick_sizes')}</span>
+            <div className="flex flex-wrap gap-2 items-center">
+              {sizes.map((s) => {
+                const pick = pickSizes.find((x) => x.id === s.id)
+                return (
+                  <span key={s.id} className="flex items-center gap-1.5">
+                    <button type="button" onClick={() => setPickSizes((prev) => pick ? prev.filter((x) => x.id !== s.id) : [...prev, { ...s, qty: '' }])} className={chipBtn(!!pick)}>{s.name}</button>
+                    {pick && (
+                      <input type="number" min="0" value={pick.qty} placeholder={t('products.qty')}
+                        onChange={(e) => setPickSizes((prev) => prev.map((x) => x.id === s.id ? { ...x, qty: e.target.value } : x))}
+                        className="w-16 bg-transparent border border-outline-variant rounded-[4px] text-center text-body-md font-body-md text-primary py-1 focus:border-secondary focus:outline-none" />
+                    )}
+                  </span>
+                )
+              })}
+              {sizes.length === 0 && <span className="font-body-md text-body-md text-on-surface-variant">{t('products.no_sizes')}</span>}
+            </div>
+            <div className="mt-5 flex gap-2 max-w-sm">
+              <input value={newSize} placeholder={t('sizes.new_placeholder')} onChange={(e) => setNewSize(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addSize()}
+                className="flex-1 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
+              <button onClick={addSize} className="px-4 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
+                {t('products.add_size')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {wizStep === 2 && (
+          <div>
+            <span className={wizField + ' block mb-3'}>{t('products.pick_color')}</span>
+            <div className="flex flex-wrap gap-2 items-center">
+              {colors.map((c) => {
+                const on = pickColors[0]?.id === c.id
+                return (
+                  <button key={c.id} type="button" onClick={() => setPickColors(on ? [] : [c])} className={chipBtn(on)}>{c.name}</button>
+                )
+              })}
+              {colors.length === 0 && <span className="font-body-md text-body-md text-on-surface-variant">{t('products.no_colors')}</span>}
+            </div>
+            <div className="mt-5 flex gap-2 max-w-sm">
+              <input value={newColor} placeholder={t('colors.new_placeholder')} onChange={(e) => setNewColor(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addColor()}
+                className="flex-1 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
+              <button onClick={addColor} className="px-4 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
+                {t('products.add_color')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {wizStep === 3 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <label className={wizField}>
+              {t('products.image_url')}
+              <input className={inputClass + ' mt-2'} value={form.image_url} placeholder="https://..." onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
+            </label>
+            <label className={wizField}>
+              {t('products.photos')}
+              <input type="file" accept="image/*" multiple onChange={addFiles}
+                className="mt-2 text-sm text-on-surface file:mr-3 file:px-3 file:py-1.5 file:border-0 file:rounded-[4px] file:bg-surface-container-highest file:text-primary file:font-label-sm file:text-label-sm cursor-pointer" />
+            </label>
+            {files.length > 0 && (
+              <div className="md:col-span-2">
+                <span className={wizField + ' block mb-3'}>{t('products.main_image')}</span>
+                <div className="flex flex-wrap gap-3">
+                  {files.map((f, i) => (
+                    <div key={i} className="relative w-20 h-24 border border-outline-variant rounded-[4px] overflow-hidden">
+                      <img src={URL.createObjectURL(f)} className="w-full h-full object-cover" alt="" />
+                      <button type="button" onClick={() => removeFile(i)}
+                        className="absolute top-1 right-1 w-5 h-5 bg-background/70 text-error rounded-full text-xs leading-none flex items-center justify-center hover:bg-error hover:text-on-error transition-colors">×</button>
+                      <button type="button" onClick={() => setMainImg(i)} title={t('products.main_image')}
+                        className={`absolute bottom-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors ${i === mainImg ? 'bg-secondary text-on-secondary' : 'bg-background/70 text-on-surface-variant hover:text-secondary'}`}>
+                        <span className="material-symbols-outlined text-sm">star</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {wizStep === 4 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 max-w-2xl">
+            <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.name')}</span><span className="font-body-md text-body-md text-primary">{form.name || '—'}</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.brand')}</span><span className="font-body-md text-body-md text-primary">{brands.find((b) => String(b.id) === form.brand_id)?.name || '—'}</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.category')}</span><span className="font-body-md text-body-md text-primary">{categories.find((c) => String(c.id) === form.category_id)?.name || '—'}</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.price')}</span><span className="font-body-md text-body-md text-primary">{form.selling_price ? `$${Number(form.selling_price).toLocaleString()}` : '—'}</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.sizes')}</span>
+            <span className="font-body-md text-body-md text-primary">{pickSizes.map((s) => `${s.name}${s.qty ? ` ×${s.qty}` : ''}`).join(', ') || '—'}</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.colors')}</span><span className="font-body-md text-body-md text-primary">{pickColors[0]?.name || '—'}</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-widest">{t('products.photos')}</span><span className="font-body-md text-body-md text-primary">{files.length ? `${files.length} ${t('common.products')}` : form.image_url ? t('products.url_image') : '—'}</span>
+          </div>
+        )}
+      </div>
+
+      {saveMsg && <p className="px-6 pb-2 font-body-sm text-body-sm text-error">{saveMsg}</p>}
+
+      <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant bg-surface-container">
+        {wizStep > 0 ? (
+          <button onClick={() => { setWizStep(wizStep - 1); setSaveMsg('') }} className="px-6 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface hover:border-secondary hover:text-secondary transition-colors">
+            {t('common.back')}
+          </button>
+        ) : <span />}
+        {wizStep < 4 ? (
+          <button onClick={() => { setWizStep(wizStep + 1); setSaveMsg('') }} className="px-8 py-2 bg-secondary text-on-secondary rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider hover:opacity-90 transition-opacity">
+            {t('common.next')}
+          </button>
+        ) : (
+          <button onClick={create} className="px-8 py-2 bg-secondary text-on-secondary rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider hover:opacity-90 transition-opacity">
+            {t('products.create_product')}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+
   const price = (p) => {
     const prices = (p.variants || []).map((v) => Number(v.selling_price) || 0)
     const min = prices.length ? Math.min(...prices) : 0
@@ -256,169 +461,37 @@ export default function Products() {
         </button>
       </div>
 
-      {formOpen && (
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto_auto] items-end gap-6 border border-outline-variant rounded-[4px] bg-surface-container-low p-6">
-          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-            {t('products.name')}
-            <input
-              className={inputClass + ' mt-2'}
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </label>
-          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-            {t('products.category')}
-            <div className="mt-2">
-              <Dropdown
-                value={form.category_id}
-                onChange={(v) => setForm({ ...form, category_id: v })}
-                options={[{ value: '', label: '—' }, ...categories.map((c) => ({ value: String(c.id), label: c.name }))]}
-              />
+      {formOpen && renderWizard()}
+
+      {confirmDel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm bg-surface-container border border-outline-variant rounded-lg p-6 shadow-2xl">
+            <div className="flex items-start gap-4">
+              <span className="material-symbols-outlined text-error text-3xl leading-none">warning</span>
+              <div>
+                <h3 className="font-label-lg text-label-lg text-primary uppercase tracking-widest">{t('products.delete_title')}</h3>
+                <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                  {confirmDel.type === 'variant' && t('products.variant_delete_confirm')}
+                  {confirmDel.type === 'product' && t('products.delete_confirm')}
+                  {confirmDel.type === 'many' && t('products.delete_many_confirm', { n: sel.size })}
+                </p>
+              </div>
             </div>
-          </label>
-          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-            {t('products.brand')}
-            <div className="mt-2">
-              <Dropdown
-                value={form.brand_id}
-                onChange={(v) => setForm({ ...form, brand_id: v })}
-                options={[{ value: '', label: '—' }, ...brands.map((b) => ({ value: String(b.id), label: b.name }))]}
-              />
-            </div>
-          </label>
-          <div className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-            {t('products.sizes')}
-            <div className="mt-2 flex flex-wrap gap-2 items-center">
-              {sizes.map((s) => {
-                const pick = pickSizes.find((x) => x.id === s.id)
-                return (
-                  <span key={s.id} className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setPickSizes((prev) => pick ? prev.filter((x) => x.id !== s.id) : [...prev, { ...s, qty: '' }])}
-                      className={`px-4 py-1.5 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${pick ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
-                    >
-                      {s.name}
-                    </button>
-                    {pick && (
-                      <input
-                        type="number"
-                        min="0"
-                        value={pick.qty}
-                        placeholder={t('products.qty')}
-                        onChange={(e) => setPickSizes((prev) => prev.map((x) => x.id === s.id ? { ...x, qty: e.target.value } : x))}
-                        className="w-16 bg-transparent border border-outline-variant rounded-[4px] text-center text-body-md font-body-md text-primary py-1 focus:border-secondary focus:outline-none"
-                      />
-                    )}
-                  </span>
-                )
-              })}
-            </div>
-          </div>
-          <div className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-            {t('products.colors')}
-            <div className="mt-2 flex flex-wrap gap-2 items-center">
-              {colors.map((c) => {
-                const on = pickColors.some((x) => x.id === c.id)
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setPickColors((prev) => on ? prev.filter((x) => x.id !== c.id) : [...prev, c])}
-                    className={`px-4 py-1.5 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${on ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
-                  >
-                    {c.name}
-                  </button>
-                )
-              })}
-              {pickColors.filter((c) => !c.id).map((c) => (
-                <span key={c.name} className="flex items-center gap-1.5 px-4 py-1.5 border border-secondary bg-secondary text-on-secondary rounded-[4px]">
-                  <span className="font-label-sm text-label-sm uppercase tracking-wider">{c.name}</span>
-                  <button type="button" onClick={() => setPickColors((prev) => prev.filter((x) => x.name !== c.name))} className="text-on-secondary/70 hover:text-on-secondary">×</button>
-                </span>
-              ))}
-            </div>
-            <div className="mt-2 flex gap-2">
-              <input
-                value={customColor}
-                placeholder={t('products.custom_color')}
-                onChange={(e) => setCustomColor(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && customColor.trim()) {
-                    setPickColors((prev) => [...prev, { name: customColor.trim() }])
-                    setCustomColor('')
-                  }
-                }}
-                className="flex-1 min-w-40 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant"
-              />
+            <div className="mt-6 flex justify-end gap-3">
               <button
-                type="button"
-                onClick={() => {
-                  if (customColor.trim()) {
-                    setPickColors((prev) => [...prev, { name: customColor.trim() }])
-                    setCustomColor('')
-                  }
-                }}
-                className="px-4 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors"
+                onClick={() => setConfirmDel(null)}
+                className="px-5 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface hover:border-secondary hover:text-secondary transition-colors"
               >
-                {t('products.add_color')}
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={runDelete}
+                className="px-5 py-2 bg-error text-on-error rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider hover:opacity-90 transition-opacity"
+              >
+                {t('common.delete')}
               </button>
             </div>
           </div>
-          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-            {t('products.image_url')}
-            <input
-              className={inputClass + ' mt-2'}
-              value={form.image_url}
-              placeholder="https://..."
-              onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-            />
-          </label>
-          <div className="flex gap-3 items-end">
-            <button
-              onClick={create}
-              className="px-6 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm text-on-surface hover:border-secondary hover:text-secondary transition-colors duration-300 uppercase tracking-wider"
-            >
-              {t('common.save')}
-            </button>
-          </div>
-          <label className="block col-span-full font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-            {t('products.description')}
-            <textarea
-              rows={3}
-              className={inputClass + ' mt-2 resize-y'}
-              value={form.description}
-              placeholder={t('products.description_placeholder')}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-          </label>
-          <label className="block col-span-full font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-            {t('products.photos')}
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="mt-2 text-sm text-on-surface file:mr-3 file:px-3 file:py-1.5 file:border-0 file:rounded-[4px] file:bg-surface-container-highest file:text-primary file:font-label-sm file:text-label-sm cursor-pointer"
-              onChange={addFiles}
-            />
-            {files.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {files.map((f, i) => (
-                  <div key={i} className="relative w-14 h-14 border border-outline-variant rounded-[4px] overflow-hidden">
-                    <img src={URL.createObjectURL(f)} className="w-full h-full object-cover" alt="" />
-                    <button
-                      type="button"
-                      onClick={() => removeFile(i)}
-                      className="absolute -top-1 -right-1 w-4 h-4 bg-error text-on-error rounded-full text-[10px] leading-none flex items-center justify-center"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </label>
-          {saveMsg && <p className="col-span-full font-body-sm text-body-sm text-error">{saveMsg}</p>}
         </div>
       )}
 

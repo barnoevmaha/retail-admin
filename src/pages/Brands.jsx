@@ -118,7 +118,6 @@ export default function Brands() {
                 {menuId === b.id && (
                   <div className="absolute right-0 top-8 z-10 bg-surface-container border border-outline-variant rounded-[4px] shadow-lg py-1 min-w-40">
                     <button onClick={() => { edit(b.id); setMenuId(null) }} className="w-full text-left px-4 py-2 font-body-md text-body-md text-primary hover:bg-surface-container-high transition-colors">{t('common.edit')}</button>
-                    <button onClick={() => { remove(b.id); setMenuId(null) }} className="w-full text-left px-4 py-2 font-body-md text-body-md text-error hover:bg-surface-container-high transition-colors">{t('common.delete')}</button>
                   </div>
                 )}
               </div>

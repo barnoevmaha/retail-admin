@@ -43,9 +43,6 @@ const groups = [
       { to: '/products', key: 'nav.products', icon: 'checkroom' },
       { to: '/categories', key: 'nav.categories', icon: 'category' },
       { to: '/brands', key: 'nav.brands', icon: 'diamond' },
-      { to: '/colors', key: 'nav.colors', icon: 'palette' },
-      { to: '/sizes', key: 'nav.sizes', icon: 'straighten' },
-      { to: '/product-images', key: 'nav.images', icon: 'photo_library' },
     ],
   },
   {
