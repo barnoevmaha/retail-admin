@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import api from '../api/client'
 import { t } from '../i18n'
 
+const REASONS = ['damaged', 'wrong_size', 'wrong_item', 'not_as_described', 'no_longer_needed', 'other']
+
 export default function ReturnsPage() {
+  const location = useLocation()
   const [returns, setReturns] = useState([])
   const [orders, setOrders] = useState([])
   const [activeId, setActiveId] = useState(null)
@@ -14,6 +18,7 @@ export default function ReturnsPage() {
   const [msg, setMsg] = useState('')
 
   useEffect(() => {
+    if (location.state?.orderId) setOrderId(String(location.state.orderId))
     api.get('/returns/').then((r) => setReturns(r.data)).catch(() => {})
     api.get('/orders/', { params: { limit: 50 } }).then((r) => setOrders(r.data.items || [])).catch(() => {})
   }, [])
@@ -68,6 +73,27 @@ export default function ReturnsPage() {
     }
   }
 
+  const printReturn = () => {
+    if (!detail) return
+    const rows = (detail.items || []).map((it) =>
+      `<tr><td style="padding:6px 12px;border-bottom:1px solid #ddd">${it.barcode || `#${it.variant_id}`}</td>` +
+      `<td style="padding:6px 12px;border-bottom:1px solid #ddd;text-align:center">x${it.quantity}</td>` +
+      `<td style="padding:6px 12px;border-bottom:1px solid #ddd;text-align:right">$${parseFloat(it.price).toFixed(2)}</td>` +
+      `<td style="padding:6px 12px;border-bottom:1px solid #ddd;text-align:right">$${(parseFloat(it.price) * it.quantity).toFixed(2)}</td></tr>`
+    ).join('')
+    const w = window.open('', '_blank')
+    w.document.write(`<!DOCTYPE html><html><head><title>Return #${detail.id}</title></head>
+<body style="font-family:monospace;font-size:14px;margin:24px;color:#111">
+<h2 style="margin:0 0 4px">RETURN RECEIPT</h2>
+<p style="margin:0">Return #${detail.id} &nbsp; Order #${detail.order_id}</p>
+<p style="margin:0">${new Date(detail.created_at || Date.now()).toLocaleString()}</p>
+${detail.reason ? `<p style="margin:4px 0">Reason: ${detail.reason}</p>` : ''}
+<table style="width:100%;border-collapse:collapse;margin-top:12px">${rows}</table>
+<p style="margin-top:12px">Total items: ${(detail.items || []).reduce((s, i) => s + i.quantity, 0)}</p>
+<script>window.onload=function(){window.print()}<\/script></body></html>`)
+    w.document.close()
+  }
+
   const cancel = async () => {
     if (!activeId) return
     try {
@@ -112,12 +138,16 @@ export default function ReturnsPage() {
               </div>
               <div>
                 <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-2">{t('returns.reason')}</label>
-                <input
-                  type="text" placeholder={t("returns.reason_placeholder")}
-                  className="w-full bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 text-body-md placeholder:text-on-surface-variant/40"
+                <select
+                  className="w-full bg-transparent border-b border-outline-variant focus:border-secondary outline-none py-2 text-body-md text-on-surface cursor-pointer"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                />
+                >
+                  <option value="" className="bg-surface-container">{t('returns.select_reason')}</option>
+                  {REASONS.map((r) => (
+                    <option key={r} value={r} className="bg-surface-container">{t('returns.reason_' + r)}</option>
+                  ))}
+                </select>
               </div>
               <button onClick={createReturn} className="w-full py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest font-bold hover:opacity-90 active:scale-[0.99] transition-all">
                 {t('returns.create')}
@@ -180,6 +210,12 @@ export default function ReturnsPage() {
                   }`}>
                     {t('status.' + detail.status)}
                   </span>
+                </div>
+                <div className="flex flex-wrap gap-2 -mt-4 mb-4">
+                  <button onClick={printReturn} className="px-4 py-2 border border-outline-variant text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest hover:border-secondary hover:text-secondary transition-all flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px]">print</span>
+                    {t('returns.print')}
+                  </button>
                 </div>
 
                 {detail.status === 'draft' && (

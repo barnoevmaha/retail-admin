@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import { t } from '../i18n'
 
@@ -18,8 +19,11 @@ export default function POS() {
   const [msg, setMsg] = useState('')
   const [suspendedSessions, setSuspendedSessions] = useState([])
   const [showSuspended, setShowSuspended] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [orders, setOrders] = useState([])
   const [lastOrderId, setLastOrderId] = useState(null)
   const inputRef = useRef(null)
+  const navigate = useNavigate()
 
   useEffect(() => { inputRef.current?.focus() }, [])
   useEffect(() => {
@@ -163,14 +167,27 @@ export default function POS() {
     }
   }
 
-  const reprintReceipt = async () => {
-    if (!lastOrderId) { setMsg(t('pos.no_receipt')); return }
-    window.open(`/api/receipts/${lastOrderId}`, '_blank')
+  const reprintReceipt = async (orderId) => {
+    const id = orderId || lastOrderId
+    if (!id) { setMsg(t('pos.no_receipt')); return }
+    window.open(`/api/receipts/${id}`, '_blank')
   }
 
   const toggleSuspended = () => {
     loadSuspended()
     setShowSuspended(!showSuspended)
+  }
+
+  const loadOrders = async () => {
+    try {
+      const r = await api.get('/orders/', { params: { limit: 10 } })
+      setOrders((r.data.items || r.data || []).filter((o) => o.status === 'completed' || o.status === 'pending'))
+    } catch {}
+  }
+
+  const toggleOrders = () => {
+    loadOrders()
+    setShowHistory(!showHistory)
   }
 
   const clearCart = () => {
@@ -346,6 +363,30 @@ export default function POS() {
           </div>
         )}
 
+        {showHistory && (
+          <div className="p-4 border-t border-outline-variant bg-surface-container space-y-2 max-h-48 overflow-y-auto">
+            <h3 className="font-label-sm text-label-sm text-on-surface uppercase tracking-widest mb-2">{t('pos.history')}</h3>
+            {orders.length === 0 ? (
+              <div className="text-on-surface-variant text-sm text-center py-2">{t('pos.no_orders')}</div>
+            ) : (
+              orders.map((o) => (
+                <div key={o.id} className="flex flex-wrap justify-between items-center gap-x-2 gap-y-1 py-1 border-b border-outline-variant/30 text-sm">
+                  <div className="flex flex-wrap items-center gap-x-2 min-w-0">
+                    <span className="text-on-surface-variant text-xs whitespace-nowrap">{new Date(o.created_at).toLocaleString()}</span>
+                    <span className="font-bold text-on-surface">#{o.id}</span>
+                    <span className="font-bold text-on-surface">${Number(o.total_amount).toFixed(2)}</span>
+                    <span className="text-on-surface-variant text-xs">{o.payment_method}</span>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => reprintReceipt(o.id)} className="px-2 py-1 border border-outline-variant text-on-surface-variant text-xs hover:border-secondary hover:text-secondary transition-colors">{t('pos.reprint')}</button>
+                    <button onClick={() => navigate('/returns', { state: { orderId: o.id } })} className="px-2 py-1 border border-error/40 text-error text-xs hover:bg-error hover:text-on-error transition-colors">{t('pos.return')}</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
         <div className="p-6 bg-surface-container space-y-5">
           {msg && <div className="text-sm text-secondary">{msg}</div>}
           <div className="relative">
@@ -389,6 +430,9 @@ export default function POS() {
               {t('pos.suspend')}
             </button>
           </div>
+          <button onClick={toggleOrders} className="w-full py-3 border border-outline-variant text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest hover:border-secondary transition-all">
+            {t('pos.history')} ({orders.length})
+          </button>
           <button onClick={reprintReceipt} className="w-full py-3 border border-outline-variant text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest hover:border-secondary transition-all">
             {t('pos.reprint')}
           </button>
