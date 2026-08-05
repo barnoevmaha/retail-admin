@@ -36,71 +36,6 @@ const Dropdown = ({ label, options, value, onChange }) => {
   )
 }
 
-const ColorPicker = ({ colors, selected, onSelect, onDelete, onAdd, emptyLabel }) => {
-  const [name, setName] = useState('')
-  const [hex, setHex] = useState('')
-  const [err, setErr] = useState('')
-  const submit = async () => {
-    const n = name.trim()
-    const h = hex.trim().replace(/^#/, '')
-    if (!n || !/^[0-9a-fA-F]{6}$/.test(h)) { setErr(t('colors.hex_invalid')); return }
-    if (await onAdd(n, `#${h.toUpperCase()}`)) { setName(''); setHex(''); setErr('') }
-  }
-  if (!colors.length) return (
-    <div>
-      <span className="font-body-md text-body-md text-on-surface-variant">{emptyLabel}</span>
-      <div className="mt-4 flex flex-wrap gap-2 max-w-xl">
-        <input value={name} placeholder={t('colors.new_placeholder')} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()}
-          className="flex-1 min-w-32 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
-        <input value={hex} placeholder={t('colors.hex_placeholder')} onChange={(e) => setHex(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()}
-          className="w-28 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
-        <button type="button" onClick={submit} className="px-4 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
-          {t('products.add_color')}
-        </button>
-      </div>
-      {err && <p className="mt-2 font-body-sm text-body-sm text-error">{err}</p>}
-    </div>
-  )
-  return (
-    <div>
-      <div
-        className="flex gap-2 overflow-x-auto pb-2 -mb-1.5"
-        onWheel={(e) => {
-          const el = e.currentTarget
-          if (el.scrollWidth > el.clientWidth && e.deltaY) { el.scrollLeft += e.deltaY }
-        }}
-      >
-        {colors.map((c) => {
-          const on = selected?.id === c.id
-          return (
-            <div key={c.id} role="button" tabIndex={0}
-              onClick={() => onSelect(c)}
-              onKeyDown={(e) => e.key === 'Enter' && onSelect(c)}
-              className={`group flex items-center gap-1.5 pl-2 pr-1 py-1 border rounded-[4px] shrink-0 transition-colors cursor-pointer ${on ? 'border-secondary bg-secondary/10' : 'border-outline-variant hover:border-secondary'}`}>
-              <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0" style={{ background: c.hex_value || '#1c1b1b' }} />
-              <span className="font-body-md text-body-md text-primary whitespace-nowrap">{c.name}</span>
-              <button type="button" title={t('common.delete')} onClick={(e) => { e.stopPropagation(); onDelete(c) }}
-                className="text-on-surface-variant hover:text-error transition-opacity duration-200 flex items-center opacity-0 group-hover:opacity-100">
-                <span className="material-symbols-outlined text-[16px]">delete</span>
-              </button>
-            </div>
-          )
-        })}
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2 max-w-xl">
-        <input value={name} placeholder={t('colors.new_placeholder')} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()}
-          className="flex-1 min-w-32 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
-        <input value={hex} placeholder={t('colors.hex_placeholder')} onChange={(e) => setHex(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()}
-          className="w-28 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
-        <button type="button" onClick={submit} className="px-4 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
-          {t('products.add_color')}
-        </button>
-      </div>
-      {err && <p className="mt-2 font-body-sm text-body-sm text-error">{err}</p>}
-    </div>
-  )
-}
-
 export default function Products() {
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
@@ -540,11 +475,11 @@ export default function Products() {
         {wizStep === 2 && (
           <div>
             <span className={wizField + ' block mb-3'}>{t('products.pick_color')}</span>
-            <ColorPicker colors={colors} selected={pickColors[0] || null}
-              onSelect={(c) => setPickColors((prev) => prev[0]?.id === c.id ? [] : [c])}
+            <ColorDropdown colors={colors} selected={pickColors[0] || null}
+              onSelect={(c) => setPickColors(c ? [c] : [])}
               onDelete={deleteColor}
               onAdd={addColor}
-              emptyLabel={t('products.no_colors')} />
+              emptyLabel={t('products.pick_color')} />
           </div>
         )}
 
@@ -900,8 +835,8 @@ export default function Products() {
                             <div className="sm:col-span-2 md:col-span-2">
                               <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">{t('products.colors')}</span>
                               <div className="mt-1.5">
-                                <ColorPicker colors={colors} selected={vf.colors[0] || null}
-                                  onSelect={(c) => setVf((prev) => ({ ...prev, colors: prev.colors[0]?.id === c.id ? [] : [c] }))}
+                                <ColorDropdown colors={colors} selected={vf.colors[0] || null}
+                                  onSelect={(c) => setVf((prev) => ({ ...prev, colors: c ? [c] : [] }))}
                                   onDelete={deleteColor}
                                   onAdd={addColor}
                                   emptyLabel={t('products.no_colors')} />
