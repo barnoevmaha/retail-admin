@@ -97,6 +97,7 @@ export default function POS() {
       const r = await api.post('/checkout/', { payment_method: paymentMethod }, {
         headers: { 'X-Customer-Id': customerId || '', 'X-Session-Key': sessionKey }
       })
+      await api.put(`/orders/${r.data.id}/status`, { status: 'confirmed' })
       setLastOrderId(r.data.id)
       setMsg(`${t('pos.sale_complete')} #${r.data.id}`)
       setItems([])
@@ -181,7 +182,7 @@ export default function POS() {
   const loadOrders = async () => {
     try {
       const r = await api.get('/orders/', { params: { limit: 10 } })
-      setOrders((r.data.items || r.data || []).filter((o) => o.status === 'completed' || o.status === 'pending'))
+      setOrders((r.data.items || r.data || []).filter((o) => ['completed', 'pending', 'confirmed'].includes(o.status)))
     } catch {}
   }
 
