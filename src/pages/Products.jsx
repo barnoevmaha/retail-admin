@@ -153,6 +153,17 @@ export default function Products() {
     setSel((prev) => (prev.size === allIds.length && allIds.every((id) => prev.has(id)) ? new Set() : new Set(allIds)))
   }
 
+  const delVariant = async (vid) => {
+    if (!window.confirm(t('products.variant_delete_confirm'))) return
+    try {
+      await api.delete(`/variants/${vid}`)
+      setSaveMsg('')
+      load()
+    } catch (err) {
+      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+    }
+  }
+
   const del = async (id) => {
     if (!window.confirm(t('products.delete_confirm'))) return
     try {
@@ -530,6 +541,13 @@ export default function Products() {
                                 <span className={`font-label-sm text-label-sm px-2 py-1 rounded-[4px] uppercase tracking-wider ${(Number(v.quantity) || 0) > 0 ? 'text-secondary border border-secondary/30' : 'text-on-surface-variant border border-outline-variant/40'}`}>
                                   {(Number(v.quantity) || 0)} {t('products.variant_stock')}
                                 </span>
+                                <button
+                                  onClick={() => delVariant(v.id)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-[4px] text-on-surface-variant hover:text-error hover:bg-surface-container-highest transition-all"
+                                  title={t('common.delete')}
+                                >
+                                  <span className="material-symbols-outlined text-sm">delete</span>
+                                </button>
                               </div>
                             ))}
                           </div>

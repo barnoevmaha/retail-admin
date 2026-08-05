@@ -103,6 +103,7 @@ export default function POS() {
       setItems([])
       setCustomer(null)
       setCustomerPhone('')
+      loadOrders()
       inputRef.current?.focus()
     } catch (err) {
       setMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
@@ -125,6 +126,7 @@ export default function POS() {
       setCustomer(null)
       setCustomerPhone('')
       loadSuspended()
+      loadOrders()
       inputRef.current?.focus()
     } catch (err) {
       setMsg(t('pos.error_suspend', { detail: err.response?.data?.detail || t('common.unknown') }))
@@ -183,8 +185,12 @@ export default function POS() {
     try {
       const r = await api.get('/orders/', { params: { limit: 10 } })
       setOrders((r.data.items || r.data || []).filter((o) => ['completed', 'pending', 'confirmed'].includes(o.status)))
-    } catch {}
+    } catch (err) {
+      setMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+    }
   }
+
+  useEffect(() => { loadOrders() }, [])
 
   const toggleOrders = () => {
     loadOrders()
