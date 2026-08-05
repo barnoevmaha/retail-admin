@@ -4,7 +4,7 @@ import { t } from '../i18n'
 
 const firstVariant = (p) => {
   const vs = p.variants || []
-  return vs.find((v) => Number(v.stock_quantity) > 0) || vs[0]
+  return vs.find((v) => Number(v.quantity) > 0) || vs[0]
 }
 
 export default function POS() {
@@ -86,8 +86,12 @@ export default function POS() {
       } catch {}
     }
     try {
+      const sessionKey = `pos-${Date.now()}`
+      await Promise.all(items.map((it) =>
+        api.post('/cart/items', { variant_id: it.id, quantity: it.qty }, { headers: { 'X-Session-Key': sessionKey } })
+      ))
       const r = await api.post('/checkout/', { payment_method: paymentMethod }, {
-        headers: { 'X-Customer-Id': customerId || '', 'X-Session-Key': `pos-${Date.now()}` }
+        headers: { 'X-Customer-Id': customerId || '', 'X-Session-Key': sessionKey }
       })
       setLastOrderId(r.data.id)
       setMsg(`${t('pos.sale_complete')} #${r.data.id}`)
