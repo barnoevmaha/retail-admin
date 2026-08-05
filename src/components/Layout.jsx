@@ -41,7 +41,6 @@ const groups = [
     label: 'CATALOG',
     items: [
       { to: '/products', key: 'nav.products', icon: 'checkroom' },
-      { to: '/categories', key: 'nav.categories', icon: 'category' },
       { to: '/brands', key: 'nav.brands', icon: 'diamond' },
     ],
   },

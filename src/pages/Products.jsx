@@ -67,6 +67,7 @@ export default function Products() {
   const [bulkQtyPanel, setBulkQtyPanel] = useState('')
   const [includeQty, setIncludeQty] = useState(false)
   const [includeQtyPanel, setIncludeQtyPanel] = useState(false)
+  const [newCat, setNewCat] = useState('')
 
   const load = () => {
     api.get('/products/', {
@@ -103,6 +104,18 @@ export default function Products() {
     if (!pick.inc) return { ...prev, sizes: prev.sizes.map((x) => x.id === s.id ? { ...x, inc: true, qty: bulkQtyPanel } : x) }
     return { ...prev, sizes: prev.sizes.filter((x) => x.id !== s.id) }
   })
+
+  const addCat = async () => {
+    if (!newCat.trim()) return
+    try {
+      const { data } = await api.post('/categories/', { name: newCat.trim() })
+      setCategories((prev) => [...prev, data])
+      setForm((prev) => ({ ...prev, category_id: String(data.id) }))
+      setNewCat('')
+    } catch (err) {
+      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+    }
+  }
 
   const addSize = async () => {
     if (!newSize.trim()) return
@@ -184,6 +197,7 @@ export default function Products() {
       setBulkQtyPanel('')
       setIncludeQty(false)
       setIncludeQtyPanel(false)
+      setNewCat('')
       setPickSizes([])
       setPickColors([])
       setCustomColor('')
@@ -343,13 +357,25 @@ export default function Products() {
                   options={[{ value: '', label: '—' }, ...brands.map((b) => ({ value: String(b.id), label: b.name }))]} />
               </div>
             </label>
-            <label className={wizField}>
+            <div className={wizField}>
               {t('products.category')}
-              <div className="mt-2">
-                <Dropdown value={form.category_id} onChange={(v) => setForm({ ...form, category_id: v })}
-                  options={[{ value: '', label: '—' }, ...categories.map((c) => ({ value: String(c.id), label: c.name }))]} />
+              <div className="mt-2 flex flex-wrap gap-2 items-center">
+                {categories.map((c) => {
+                  const on = form.category_id === String(c.id)
+                  return (
+                    <button key={c.id} type="button" onClick={() => setForm({ ...form, category_id: on ? '' : String(c.id) })} className={chipBtn(on)}>{c.name}</button>
+                  )
+                })}
+                {categories.length === 0 && <span className="font-body-md text-body-md text-on-surface-variant">{t('products.no_categories')}</span>}
+                <div className="flex gap-2 ml-auto">
+                  <input value={newCat} placeholder={t('products.new_category')} onChange={(e) => setNewCat(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addCat()}
+                    className="w-36 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
+                  <button type="button" onClick={addCat} className="px-3 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
+                    {t('products.add_category')}
+                  </button>
+                </div>
               </div>
-            </label>
+            </div>
             <label className={wizField}>
               {t('products.variant_purchase')}
               <input className={inputClass + ' mt-2'} type="number" min="0" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} />

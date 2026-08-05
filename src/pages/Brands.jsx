@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import api from '../api/client'
+import api, { fileUrl } from '../api/client'
 import { t } from '../i18n'
 import { slugify } from '../utils/slugify'
 
-const imgSrc = (b) => (typeof b.logo_url === 'string' ? b.logo_url : typeof b.logo === 'string' ? b.logo : null)
+const imgSrc = (b) => (typeof b.logo_url === 'string' ? fileUrl(b.logo_url) : typeof b.logo === 'string' ? fileUrl(b.logo) : null)
 
 export default function Brands() {
   const [brands, setBrands] = useState([])
@@ -11,7 +11,6 @@ export default function Brands() {
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugDirty, setSlugDirty] = useState(false)
-  const [menuId, setMenuId] = useState(null)
 
   useEffect(() => { api.get('/brands/').then((r) => setBrands(r.data)).catch(() => {}) }, [])
 
@@ -36,6 +35,18 @@ export default function Brands() {
     if (!newName || newName === b?.name) return
     await api.put(`/brands/${id}`, { ...b, name: newName })
     refresh()
+  }
+
+  const uploadLogo = async (id, file) => {
+    if (!file) return
+    const fd = new FormData()
+    fd.append('file', file)
+    try {
+      await api.post(`/brands/${id}/logo`, fd)
+      refresh()
+    } catch (err) {
+      window.alert(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+    }
   }
 
   const inputClass =
@@ -113,13 +124,12 @@ export default function Brands() {
               <div className="font-body-lg text-body-lg text-primary uppercase tracking-wide">{b.name}</div>
               <div className="hidden md:block font-body-md text-body-md text-on-surface-variant text-right">{b.products_count ?? '—'} items</div>
               <div className="text-right flex items-center justify-end gap-2 relative">
-                <button onClick={() => remove(b.id)} className="text-on-surface-variant hover:text-error transition-colors"><span className="material-symbols-outlined text-[20px]">delete</span></button>
-                <button onClick={() => setMenuId(menuId === b.id ? null : b.id)} className="text-on-surface-variant hover:text-secondary transition-colors"><span className="material-symbols-outlined">more_vert</span></button>
-                {menuId === b.id && (
-                  <div className="absolute right-0 top-8 z-10 bg-surface-container border border-outline-variant rounded-[4px] shadow-lg py-1 min-w-40">
-                    <button onClick={() => { edit(b.id); setMenuId(null) }} className="w-full text-left px-4 py-2 font-body-md text-body-md text-primary hover:bg-surface-container-high transition-colors">{t('common.edit')}</button>
-                  </div>
-                )}
+                <label className="text-on-surface-variant hover:text-secondary transition-colors cursor-pointer" title={t('brands.logo')}>
+                  <span className="material-symbols-outlined text-[20px]">photo_camera</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => { uploadLogo(b.id, e.target.files?.[0]); e.target.value = '' }} />
+                </label>
+                <button onClick={() => edit(b.id)} className="text-on-surface-variant hover:text-secondary transition-colors" title={t('common.edit')}><span className="material-symbols-outlined text-[20px]">edit</span></button>
+                <button onClick={() => remove(b.id)} className="text-on-surface-variant hover:text-error transition-colors" title={t('common.delete')}><span className="material-symbols-outlined text-[20px]">delete</span></button>
               </div>
             </div>
           ))
