@@ -65,6 +65,8 @@ export default function Products() {
   const [newUrl, setNewUrl] = useState('')
   const [bulkQty, setBulkQty] = useState('')
   const [bulkQtyPanel, setBulkQtyPanel] = useState('')
+  const [includeQty, setIncludeQty] = useState(false)
+  const [includeQtyPanel, setIncludeQtyPanel] = useState(false)
 
   const load = () => {
     api.get('/products/', {
@@ -87,6 +89,20 @@ export default function Products() {
     api.get('/sizes/').then((r) => setSizes(r.data)).catch(() => {})
     api.get('/colors/').then((r) => setColors(r.data)).catch(() => {})
   }, [])
+
+  const cycleSize = (s) => setPickSizes((prev) => {
+    const pick = prev.find((x) => x.id === s.id)
+    if (!pick) return [...prev, { ...s, qty: '', inc: false }]
+    if (!pick.inc) return prev.map((x) => x.id === s.id ? { ...x, inc: true, qty: bulkQty } : x)
+    return prev.filter((x) => x.id !== s.id)
+  })
+
+  const cycleSizePanel = (s) => setVf((prev) => {
+    const pick = prev.sizes.find((x) => x.id === s.id)
+    if (!pick) return { ...prev, sizes: [...prev.sizes, { ...s, qty: '', inc: false }] }
+    if (!pick.inc) return { ...prev, sizes: prev.sizes.map((x) => x.id === s.id ? { ...x, inc: true, qty: bulkQtyPanel } : x) }
+    return { ...prev, sizes: prev.sizes.filter((x) => x.id !== s.id) }
+  })
 
   const addSize = async () => {
     if (!newSize.trim()) return
@@ -166,6 +182,8 @@ export default function Products() {
       setMainImg(0)
       setBulkQty('')
       setBulkQtyPanel('')
+      setIncludeQty(false)
+      setIncludeQtyPanel(false)
       setPickSizes([])
       setPickColors([])
       setCustomColor('')
@@ -263,6 +281,7 @@ export default function Products() {
       }
       setVf({ sizes: [], colors: [], customColor: '', purchase: '', selling: '' })
       setBulkQtyPanel('')
+      setIncludeQtyPanel(false)
       setSaveMsg('')
       load()
     } catch (err) {
@@ -352,10 +371,11 @@ export default function Products() {
             <div className="flex flex-wrap gap-2 items-center">
               {sizes.map((s) => {
                 const pick = pickSizes.find((x) => x.id === s.id)
+                const showQty = pick && (pick.inc || includeQty)
                 return (
                   <span key={s.id} className="flex items-center gap-1.5">
-                    <button type="button" onClick={() => setPickSizes((prev) => pick ? prev.filter((x) => x.id !== s.id) : [...prev, { ...s, qty: '' }])} className={chipBtn(!!pick)}>{s.name}</button>
-                    {pick && (
+                    <button type="button" onClick={() => cycleSize(s)} className={chipBtn(!!pick)}>{s.name}</button>
+                    {showQty && (
                       <input type="number" min="0" value={pick.qty} placeholder={t('products.qty')}
                         onChange={(e) => setPickSizes((prev) => prev.map((x) => x.id === s.id ? { ...x, qty: e.target.value } : x))}
                         className="w-16 bg-transparent border border-outline-variant rounded-[4px] text-center text-body-md font-body-md text-primary py-1 focus:border-secondary focus:outline-none" />
@@ -365,8 +385,15 @@ export default function Products() {
               })}
               {sizes.length === 0 && <span className="font-body-md text-body-md text-on-surface-variant">{t('products.no_sizes')}</span>}
             </div>
+            <p className="mt-3 font-body-sm text-body-sm text-on-surface-variant">{t('products.qty_hint')}</p>
+            {pickSizes.length > 1 && (
+              <label className="mt-4 flex items-center gap-3 cursor-pointer w-fit">
+                <input type="checkbox" className="custom-checkbox" checked={includeQty} onChange={(e) => { setIncludeQty(e.target.checked); setPickSizes((prev) => prev.map((x) => ({ ...x, inc: e.target.checked }))) }} />
+                <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('products.include_qty')}</span>
+              </label>
+            )}
             {pickSizes.length > 0 && (
-              <div className="mt-5 flex items-center gap-3 max-w-xl">
+              <div className="mt-4 flex items-center gap-3 max-w-xl">
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider shrink-0">{t('products.bulk_qty')}</span>
                 <input type="number" min="0" value={bulkQty} placeholder={t('products.qty')}
                   onChange={(e) => {
@@ -709,21 +736,23 @@ export default function Products() {
                               <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">{t('products.variant_size')}</span>
                               <div className="mt-1.5 flex flex-wrap gap-2">
                                 {sizes.map((s) => {
-                                  const on = vf.sizes.some((x) => x.id === s.id)
+                                  const pick = vf.sizes.find((x) => x.id === s.id)
+                                  const on = !!pick
+                                  const showQty = pick && (pick.inc || includeQtyPanel)
                                   return (
                                     <span key={s.id} className="flex items-center gap-1.5">
                                       <button
                                         type="button"
-                                        onClick={() => setVf((prev) => on ? { ...prev, sizes: prev.sizes.filter((x) => x.id !== s.id) } : { ...prev, sizes: [...prev.sizes, { ...s, qty: '' }] })}
+                                        onClick={() => cycleSizePanel(s)}
                                         className={`px-3 py-1 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${on ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
                                       >
                                         {s.name}
                                       </button>
-                                      {on && (
+                                      {showQty && (
                                         <input
                                           type="number"
                                           min="0"
-                                          value={vf.sizes.find((x) => x.id === s.id).qty}
+                                          value={pick.qty}
                                           placeholder={t('products.qty')}
                                           onChange={(e) => setVf((prev) => ({ ...prev, sizes: prev.sizes.map((x) => x.id === s.id ? { ...x, qty: e.target.value } : x) }))}
                                           className="w-16 bg-transparent border border-outline-variant rounded-[4px] text-center text-body-md font-body-md text-primary py-1 focus:border-secondary focus:outline-none"
@@ -733,6 +762,12 @@ export default function Products() {
                                   )
                                 })}
                               </div>
+                              {vf.sizes.length > 1 && (
+                                <label className="mt-2.5 flex items-center gap-2 cursor-pointer w-fit">
+                                  <input type="checkbox" className="custom-checkbox" checked={includeQtyPanel} onChange={(e) => { setIncludeQtyPanel(e.target.checked); setVf((prev) => ({ ...prev, sizes: prev.sizes.map((x) => ({ ...x, inc: e.target.checked })) })) }} />
+                                  <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('products.include_qty')}</span>
+                                </label>
+                              )}
                               {vf.sizes.length > 0 && (
                                 <div className="mt-2.5 flex items-center gap-2">
                                   <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('products.bulk_qty')}</span>
