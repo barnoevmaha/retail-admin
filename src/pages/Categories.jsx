@@ -8,6 +8,7 @@ const imgSrc = (c) => (typeof c.image_url === 'string' ? c.image_url : typeof c.
 export default function Categories() {
   const [cats, setCats] = useState([])
   const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState(null)
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugDirty, setSlugDirty] = useState(false)
@@ -16,11 +17,20 @@ export default function Categories() {
 
   const refresh = () => api.get('/categories/').then((r) => setCats(r.data))
 
-  const add = async () => {
+  const save = async () => {
     if (!name) return
-    await api.post('/categories/', { name, slug })
-    setName(''); setSlug(''); setSlugDirty(false); setFormOpen(false)
+    if (editing) await api.put(`/categories/${editing}`, { name, slug })
+    else await api.post('/categories/', { name, slug })
+    setName(''); setSlug(''); setSlugDirty(false); setEditing(null); setFormOpen(false)
     refresh()
+  }
+
+  const edit = (c) => {
+    setEditing(c.id)
+    setName(c.name)
+    setSlug(c.slug || '')
+    setSlugDirty(true)
+    setFormOpen(true)
   }
 
   const remove = async (id) => {
@@ -74,10 +84,10 @@ export default function Categories() {
             <span className="mt-1 block font-body-sm text-body-sm text-on-surface-variant normal-case tracking-normal">{t('common.used_in_urls')}</span>
           </label>
           <button
-            onClick={add}
+            onClick={save}
             className="px-6 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm text-on-surface hover:border-secondary hover:text-secondary transition-colors duration-300"
           >
-            {t('common.add')}
+            {editing ? t('common.save') : t('common.add')}
           </button>
         </div>
       )}
@@ -114,7 +124,7 @@ export default function Categories() {
                 <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant text-right">{c.products_count ?? '-'}</td>
                 <td className="py-4 px-6">
                   <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <button className="text-on-surface-variant hover:text-primary transition-colors"><span className="material-symbols-outlined text-[20px]">edit</span></button>
+                    <button onClick={() => edit(c)} className="text-on-surface-variant hover:text-primary transition-colors"><span className="material-symbols-outlined text-[20px]">edit</span></button>
                     <button onClick={() => remove(c.id)} className="text-on-surface-variant hover:text-error transition-colors"><span className="material-symbols-outlined text-[20px]">delete</span></button>
                   </div>
                 </td>
