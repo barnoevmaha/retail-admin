@@ -350,8 +350,8 @@ export default function Products() {
     `px-4 py-1.5 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${on ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`
 
   const renderWizard = () => (
-    <div className="border border-outline-variant rounded-lg bg-surface-container-low overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant bg-surface-container">
+    <div className="border border-outline-variant rounded-lg bg-surface-container-low">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant bg-surface-container rounded-t-lg">
         <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">{t('products.wizard')}</span>
         <button onClick={() => { setFormOpen(false); setSaveMsg('') }} className="text-on-surface-variant hover:text-error transition-colors">
           <span className="material-symbols-outlined">close</span>
@@ -549,7 +549,7 @@ export default function Products() {
       {wizError && <p className="px-6 pb-2 font-body-sm text-body-sm text-error">{wizError}</p>}
       {saveMsg && <p className="px-6 pb-2 font-body-sm text-body-sm text-error">{saveMsg}</p>}
 
-      <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant bg-surface-container">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant bg-surface-container rounded-b-lg">
         {wizStep > 0 ? (
           <button onClick={() => { setWizStep(wizStep - 1); setSaveMsg('') }} className="px-6 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface hover:border-secondary hover:text-secondary transition-colors">
             {t('common.back')}
