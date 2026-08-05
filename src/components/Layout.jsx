@@ -5,7 +5,6 @@ import Dashboard from '../pages/Dashboard'
 import Products from '../pages/Products'
 import Categories from '../pages/Categories'
 import Brands from '../pages/Brands'
-import Colors from '../pages/ColorList'
 import Sizes from '../pages/SizeList'
 import Orders from '../pages/Orders'
 import OrderDetail from '../pages/OrderDetail'
@@ -177,7 +176,6 @@ export default function Layout() {
             <Route path="returns" element={<ReturnsPage />} />
             <Route path="writeoffs" element={<WriteOffsPage />} />
             <Route path="adjustments" element={<AdjustmentsPage />} />
-            <Route path="colors" element={<Colors />} />
             <Route path="sizes" element={<Sizes />} />
             <Route path="pos" element={<POS />} />
             <Route path="analytics" element={<Analytics />} />

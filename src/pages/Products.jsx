@@ -36,6 +36,65 @@ const Dropdown = ({ label, options, value, onChange }) => {
   )
 }
 
+const ColorPicker = ({ colors, selected, onSelect, onDelete, onAdd, emptyLabel, bare }) => {
+  const [name, setName] = useState('')
+  const [hex, setHex] = useState('')
+  const [err, setErr] = useState('')
+  const submit = async () => {
+    const n = name.trim()
+    const h = hex.trim().replace(/^#/, '')
+    if (!n || !/^[0-9a-fA-F]{6}$/.test(h)) { setErr(t('colors.hex_invalid')); return }
+    if (await onAdd(n, `#${h.toUpperCase()}`)) { setName(''); setHex(''); setErr('') }
+  }
+  if (!colors.length) return (
+    <div>
+      <span className="font-body-md text-body-md text-on-surface-variant">{emptyLabel}</span>
+      <div className="mt-4 flex flex-wrap gap-2 max-w-xl">
+        <input value={name} placeholder={t('colors.new_placeholder')} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()}
+          className="flex-1 min-w-32 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
+        <input value={hex} placeholder={t('colors.hex_placeholder')} onChange={(e) => setHex(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()}
+          className="w-28 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
+        <button type="button" onClick={submit} className="px-4 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
+          {t('products.add_color')}
+        </button>
+      </div>
+      {err && <p className="mt-2 font-body-sm text-body-sm text-error">{err}</p>}
+    </div>
+  )
+  return (
+    <div>
+      <div className="flex flex-wrap gap-2">
+        {colors.map((c) => {
+          const on = !bare && selected?.id === c.id
+          return (
+            <div key={c.id} role={bare ? undefined : 'button'} tabIndex={bare ? undefined : 0}
+              onClick={bare ? undefined : () => onSelect(c)}
+              onKeyDown={bare ? undefined : (e) => e.key === 'Enter' && onSelect(c)}
+              className={`flex items-center gap-2 pl-2 pr-1 py-1 border rounded-[4px] transition-colors ${bare ? '' : 'cursor-pointer'} ${on ? 'border-secondary bg-secondary/10' : 'border-outline-variant hover:border-secondary'}`}>
+              <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0" style={{ background: c.hex_value || '#1c1b1b' }} />
+              <span className="font-body-md text-body-md text-primary">{c.name}</span>
+              <button type="button" title={t('common.delete')} onClick={(e) => { e.stopPropagation(); onDelete(c) }}
+                className="text-on-surface-variant hover:text-error transition-colors flex items-center">
+                <span className="material-symbols-outlined text-[16px]">delete</span>
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 max-w-xl">
+        <input value={name} placeholder={t('colors.new_placeholder')} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()}
+          className="flex-1 min-w-32 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
+        <input value={hex} placeholder={t('colors.hex_placeholder')} onChange={(e) => setHex(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()}
+          className="w-28 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
+        <button type="button" onClick={submit} className="px-4 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
+          {t('products.add_color')}
+        </button>
+      </div>
+      {err && <p className="mt-2 font-body-sm text-body-sm text-error">{err}</p>}
+    </div>
+  )
+}
+
 export default function Products() {
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
@@ -51,14 +110,12 @@ export default function Products() {
   const [colors, setColors] = useState([])
   const [pickSizes, setPickSizes] = useState([])
   const [pickColors, setPickColors] = useState([])
-  const [customColor, setCustomColor] = useState('')
   const [saveMsg, setSaveMsg] = useState('')
   const [openId, setOpenId] = useState(null)
-  const [vf, setVf] = useState({ sizes: [], colors: [], customColor: '', purchase: '', selling: '' })
+  const [vf, setVf] = useState({ sizes: [], colors: [], purchase: '', selling: '' })
   const [descDraft, setDescDraft] = useState('')
   const [wizStep, setWizStep] = useState(0)
   const [newSize, setNewSize] = useState('')
-  const [newColor, setNewColor] = useState('')
   const [mainImg, setMainImg] = useState(0)
   const [confirmDel, setConfirmDel] = useState(null)
   const [urlImages, setUrlImages] = useState([])
@@ -150,13 +207,27 @@ export default function Products() {
     }
   }
 
-  const addColor = async () => {
-    if (!newColor.trim()) return
+  const addColor = async (name, hex) => {
     try {
-      const { data } = await api.post('/colors/', { name: newColor.trim() })
+      const { data } = await api.post('/colors/', { name, hex_value: hex })
       setColors((prev) => [...prev, data])
       setPickColors([data])
-      setNewColor('')
+      setVf((prev) => ({ ...prev, colors: [data] }))
+      return true
+    } catch (err) {
+      setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
+      return false
+    }
+  }
+
+  const deleteColor = async (clr) => {
+    if (!window.confirm(t('products.color_delete_confirm', { name: clr.name }))) return
+    try {
+      await api.delete(`/colors/${clr.id}`)
+      setColors((prev) => prev.filter((c) => c.id !== clr.id))
+      setPickColors((prev) => prev.filter((c) => c.id !== clr.id))
+      setVf((prev) => ({ ...prev, colors: prev.colors.filter((c) => c.id !== clr.id) }))
+      setSaveMsg('')
     } catch (err) {
       setSaveMsg(t('common.error_msg', { detail: err.response?.data?.detail || t('common.unknown') }))
     }
@@ -319,7 +390,7 @@ export default function Products() {
         ))
         await api.post(`/adjustments/${adj.data.id}/confirm`)
       }
-      setVf({ sizes: [], colors: [], customColor: '', purchase: '', selling: '' })
+      setVf({ sizes: [], colors: [], purchase: '', selling: '' })
       setBulkQtyPanel('')
       setIncludeQtyPanel(false)
       setSaveMsg('')
@@ -463,20 +534,11 @@ export default function Products() {
         {wizStep === 2 && (
           <div>
             <span className={wizField + ' block mb-3'}>{t('products.pick_color')}</span>
-            <div className="flex flex-wrap gap-2 items-center">
-              <Dropdown label={t('products.variant_color')}
-                value={pickColors[0] ? String(pickColors[0].id) : ''}
-                onChange={(v) => { const c = colors.find((x) => String(x.id) === v); setPickColors(c ? [c] : []) }}
-                options={[{ value: '', label: '—' }, ...colors.map((c) => ({ value: String(c.id), label: c.name }))]} />
-              {colors.length === 0 && <span className="font-body-md text-body-md text-on-surface-variant">{t('products.no_colors')}</span>}
-              <div className="flex gap-2 ml-auto">
-                <input value={newColor} placeholder={t('colors.new_placeholder')} onChange={(e) => setNewColor(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addColor()}
-                  className="w-36 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant" />
-                <button onClick={addColor} className="px-3 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors">
-                  {t('products.add_color')}
-                </button>
-              </div>
-            </div>
+            <ColorPicker colors={colors} selected={pickColors[0] || null}
+              onSelect={(c) => setPickColors((prev) => prev[0]?.id === c.id ? [] : [c])}
+              onDelete={deleteColor}
+              onAdd={addColor}
+              emptyLabel={t('products.no_colors')} />
           </div>
         )}
 
@@ -590,6 +652,12 @@ export default function Products() {
           {t('products.new')}
         </button>
       </div>
+
+      <section className="bg-surface border border-outline-variant rounded-xl p-5">
+        <h3 className="font-headline-sm text-headline-sm text-primary mb-3">{t('colors.title')}</h3>
+        <ColorPicker bare colors={colors} selected={null} onSelect={() => {}}
+          onDelete={deleteColor} onAdd={addColor} emptyLabel={t('products.no_colors')} />
+      </section>
 
       {formOpen && renderWizard()}
 
@@ -831,50 +899,12 @@ export default function Products() {
                             </div>
                             <div className="sm:col-span-2 md:col-span-2">
                               <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">{t('products.colors')}</span>
-                              <div className="mt-1.5 flex flex-wrap gap-2">
-                                {colors.map((c) => {
-                                  const on = vf.colors.some((x) => x.id === c.id)
-                                  return (
-                                    <button
-                                      key={c.id}
-                                      type="button"
-                                      onClick={() => setVf((prev) => on ? { ...prev, colors: prev.colors.filter((x) => x.id !== c.id) } : { ...prev, colors: [...prev.colors, c] })}
-                                      className={`px-3 py-1 border rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider transition-colors ${on ? 'border-secondary bg-secondary text-on-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
-                                    >
-                                      {c.name}
-                                    </button>
-                                  )
-                                })}
-                                {vf.colors.filter((c) => !c.id).map((c) => (
-                                  <span key={c.name} className="flex items-center gap-1.5 px-3 py-1 border border-secondary bg-secondary text-on-secondary rounded-[4px]">
-                                    <span className="font-label-sm text-label-sm uppercase tracking-wider">{c.name}</span>
-                                    <button type="button" onClick={() => setVf((prev) => ({ ...prev, colors: prev.colors.filter((x) => x.name !== c.name) }))} className="text-on-secondary/70 hover:text-on-secondary">×</button>
-                                  </span>
-                                ))}
-                              </div>
-                              <div className="mt-2 flex gap-2">
-                                <input
-                                  value={vf.customColor}
-                                  placeholder={t('products.custom_color')}
-                                  onChange={(e) => setVf({ ...vf, customColor: e.target.value })}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && vf.customColor.trim()) {
-                                      setVf((prev) => ({ ...prev, colors: [...prev.colors, { name: vf.customColor.trim() }], customColor: '' }))
-                                    }
-                                  }}
-                                  className="flex-1 min-w-24 bg-transparent border border-outline-variant rounded-[4px] px-3 py-1.5 text-body-md font-body-md text-primary focus:border-secondary focus:outline-none placeholder:text-on-surface-variant"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (vf.customColor.trim()) {
-                                      setVf((prev) => ({ ...prev, colors: [...prev.colors, { name: vf.customColor.trim() }], customColor: '' }))
-                                    }
-                                  }}
-                                  className="px-3 py-1.5 border border-outline-variant rounded-[4px] font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors"
-                                >
-                                  {t('products.add_color')}
-                                </button>
+                              <div className="mt-1.5">
+                                <ColorPicker colors={colors} selected={vf.colors[0] || null}
+                                  onSelect={(c) => setVf((prev) => ({ ...prev, colors: prev.colors[0]?.id === c.id ? [] : [c] }))}
+                                  onDelete={deleteColor}
+                                  onAdd={addColor}
+                                  emptyLabel={t('products.no_colors')} />
                               </div>
                             </div>
                             <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
