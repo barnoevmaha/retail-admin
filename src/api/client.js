@@ -15,6 +15,9 @@ const api = axios.create({ baseURL })
 // ponytail: backend returns relative /uploads/... paths; resolve them against the backend origin
 export const fileUrl = (u) => (u && u.startsWith('/uploads/') ? baseURL.replace(/\/api$/, '') + u : u)
 
+// absolute backend URL for browser-level fetches (window.open etc.) that bypass axios
+export const apiUrl = (p) => baseURL + p
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) config.headers.Authorization = `Bearer ${token}`

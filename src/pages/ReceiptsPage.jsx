@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '../api/client'
+import api, { apiUrl } from '../api/client'
 import { t } from '../i18n'
 
 export default function ReceiptsPage() {
@@ -9,8 +9,8 @@ export default function ReceiptsPage() {
     api.get('/receipts/history', { params: { limit: 100 } }).then((r) => setReceipts(r.data)).catch(() => {})
   }, [])
 
-  const printReceipt = (id) => window.open(`/api/receipts/${id}`, '_blank')
-  const downloadReceipt = (id) => window.open(`/api/receipts/${id}/download`, '_blank')
+  const printReceipt = (id) => window.open(apiUrl(`/receipts/${id}`), '_blank')
+  const downloadReceipt = (id) => window.open(apiUrl(`/receipts/${id}/download`), '_blank')
 
   return (
     <div className="flex flex-col gap-8">
