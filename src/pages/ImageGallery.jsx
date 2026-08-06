@@ -7,10 +7,12 @@ export default function ImageGallery() {
   const [productId, setProductId] = useState('')
   const [images, setImages] = useState([])
   const [url, setUrl] = useState('')
+  const [colors, setColors] = useState([])
   const fileRef = useRef()
 
   useEffect(() => {
     api.get('/products/', { params: { limit: 100 } }).then((r) => setProducts(r.data.items)).catch(() => {})
+    api.get('/colors/').then((r) => setColors(r.data)).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -43,6 +45,13 @@ export default function ImageGallery() {
     try {
       await api.delete(`/products/${productId}/images/${imageId}`)
       setImages((prev) => prev.filter((i) => i.id !== imageId))
+    } catch {}
+  }
+
+  const setColor = async (imageId, colorId) => {
+    try {
+      await api.patch(`/products/${productId}/images/${imageId}`, { color_id: colorId || null })
+      setImages((prev) => prev.map((i) => ({ ...i, color_id: colorId || null })))
     } catch {}
   }
 
@@ -109,6 +118,18 @@ export default function ImageGallery() {
                       {t('images.main')}
                     </span>
                   )}
+                </div>
+                <div className="flex gap-2 mb-2">
+                  <select
+                    value={String(img.color_id || '')}
+                    onChange={(e) => setColor(img.id, e.target.value ? Number(e.target.value) : null)}
+                    className="w-full bg-transparent border border-outline-variant text-primary text-body-sm py-1 px-2 cursor-pointer"
+                  >
+                    <option value="" className="bg-surface-container">{t('images.no_color')}</option>
+                    {colors.map((c) => (
+                      <option key={c.id} value={c.id} className="bg-surface-container">{c.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex gap-2">
                   {!img.is_main && (

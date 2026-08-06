@@ -121,6 +121,7 @@ export default function Products() {
   const [mainImg, setMainImg] = useState(0)
   const [confirmDel, setConfirmDel] = useState(null)
   const [urlImages, setUrlImages] = useState([])
+  const [imgColors, setImgColors] = useState([])
   const [newUrl, setNewUrl] = useState('')
   const [bulkQty, setBulkQty] = useState('')
   const [bulkQtyPanel, setBulkQtyPanel] = useState('')
@@ -258,11 +259,12 @@ export default function Products() {
         fd.append('file', f)
         fd.append('sort_order', String(i))
         fd.append('is_main', String(total > 0 && i === mainImg))
+        if (imgColors[i]) fd.append('color_id', String(imgColors[i].id))
         return api.post(`/products/${data.id}/images/upload`, fd).catch(() => {})
       }))
       await Promise.all(urls.map((url, j) => {
         const pos = files.length + j
-        return api.post(`/products/${data.id}/images/`, { image_url: url, is_main: total > 0 && pos === mainImg }).catch(() => {})
+        return api.post(`/products/${data.id}/images/`, { image_url: url, is_main: total > 0 && pos === mainImg, color_id: imgColors[pos]?.id ?? null }).catch(() => {})
       }))
       const color = pickColors[0]?.name || null
       const created = []
@@ -309,11 +311,13 @@ export default function Products() {
 
   const addFiles = (e) => {
     setFiles((prev) => [...prev, ...Array.from(e.target.files || [])])
+    setImgColors((prev) => [...prev, ...Array.from(e.target.files || []).map(() => null)])
     e.target.value = ''
   }
 
   const removeFile = (i) => setFiles((prev) => {
     const next = prev.filter((_, idx) => idx !== i)
+    setImgColors((prevC) => prevC.filter((_, idx) => idx !== i))
     setMainImg((m) => Math.min(m, next.length + urlImages.length - 1))
     return next
   })
@@ -322,11 +326,13 @@ export default function Products() {
     const u = newUrl.trim()
     if (!u) return
     setUrlImages((prev) => [...prev, u])
+    setImgColors((prev) => [...prev, null])
     setNewUrl('')
   }
 
   const removeUrl = (i) => setUrlImages((prev) => {
     const next = prev.filter((_, idx) => idx !== i)
+    setImgColors((prevC) => prevC.filter((_, idx) => files.length + idx !== files.length + i))
     setMainImg((m) => Math.min(m, files.length + next.length - 1))
     return next
   })
@@ -566,27 +572,37 @@ export default function Products() {
                 <span className={wizField + ' block mb-3'}>{t('products.main_image')}</span>
                 <div className="flex flex-wrap gap-3">
                   {files.map((f, i) => (
-                    <div key={i} className="relative w-20 h-24 border border-outline-variant rounded-[4px] overflow-hidden">
-                      <img src={URL.createObjectURL(f)} className="w-full h-full object-cover" alt="" />
-                      <button type="button" onClick={() => removeFile(i)}
-                        className="absolute top-1 right-1 w-5 h-5 bg-background/70 text-error rounded-full text-xs leading-none flex items-center justify-center hover:bg-error hover:text-on-error transition-colors">×</button>
-                      <button type="button" onClick={() => setMainImg(i)} title={t('products.main_image')}
-                        className={`absolute bottom-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors ${i === mainImg ? 'bg-secondary text-on-secondary' : 'bg-background/70 text-on-surface-variant hover:text-secondary'}`}>
-                        <span className="material-symbols-outlined text-sm">star</span>
-                      </button>
+                    <div key={i} className="flex flex-col gap-2">
+                      <div className="relative w-20 h-24 border border-outline-variant rounded-[4px] overflow-hidden">
+                        <img src={URL.createObjectURL(f)} className="w-full h-full object-cover" alt="" />
+                        <button type="button" onClick={() => removeFile(i)}
+                          className="absolute top-1 right-1 w-5 h-5 bg-background/70 text-error rounded-full text-xs leading-none flex items-center justify-center hover:bg-error hover:text-on-error transition-colors">×</button>
+                        <button type="button" onClick={() => setMainImg(i)} title={t('products.main_image')}
+                          className={`absolute bottom-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors ${i === mainImg ? 'bg-secondary text-on-secondary' : 'bg-background/70 text-on-surface-variant hover:text-secondary'}`}>
+                          <span className="material-symbols-outlined text-sm">star</span>
+                        </button>
+                      </div>
+                      <ColorDropdown colors={colors} selected={imgColors[i] || null}
+                        onSelect={(c) => setImgColors((prev) => prev.map((x, idx) => idx === i ? c : x))}
+                        onDelete={deleteColor} onAdd={addColor} emptyLabel="—" />
                     </div>
                   ))}
                   {urlImages.map((u, j) => {
                     const pos = files.length + j
                     return (
-                      <div key={u + j} className="relative w-20 h-24 border border-outline-variant rounded-[4px] overflow-hidden bg-surface-container-high">
-                        <img src={u} className="w-full h-full object-cover" alt="" onError={(e) => { e.currentTarget.classList.add('opacity-40'); e.currentTarget.removeAttribute('src') }} />
-                        <button type="button" onClick={() => removeUrl(j)}
-                          className="absolute top-1 right-1 w-5 h-5 bg-background/70 text-error rounded-full text-xs leading-none flex items-center justify-center hover:bg-error hover:text-on-error transition-colors">×</button>
-                        <button type="button" onClick={() => setMainImg(pos)} title={t('products.main_image')}
-                          className={`absolute bottom-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors ${pos === mainImg ? 'bg-secondary text-on-secondary' : 'bg-background/70 text-on-surface-variant hover:text-secondary'}`}>
-                          <span className="material-symbols-outlined text-sm">star</span>
-                        </button>
+                      <div key={u + j} className="flex flex-col gap-2">
+                        <div className="relative w-20 h-24 border border-outline-variant rounded-[4px] overflow-hidden bg-surface-container-high">
+                          <img src={u} className="w-full h-full object-cover" alt="" onError={(e) => { e.currentTarget.classList.add('opacity-40'); e.currentTarget.removeAttribute('src') }} />
+                          <button type="button" onClick={() => removeUrl(j)}
+                            className="absolute top-1 right-1 w-5 h-5 bg-background/70 text-error rounded-full text-xs leading-none flex items-center justify-center hover:bg-error hover:text-on-error transition-colors">×</button>
+                          <button type="button" onClick={() => setMainImg(pos)} title={t('products.main_image')}
+                            className={`absolute bottom-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors ${pos === mainImg ? 'bg-secondary text-on-secondary' : 'bg-background/70 text-on-surface-variant hover:text-secondary'}`}>
+                            <span className="material-symbols-outlined text-sm">star</span>
+                          </button>
+                        </div>
+                        <ColorDropdown colors={colors} selected={imgColors[pos] || null}
+                          onSelect={(c) => setImgColors((prev) => prev.map((x, idx) => idx === pos ? c : x))}
+                          onDelete={deleteColor} onAdd={addColor} emptyLabel="—" />
                       </div>
                     )
                   })}
