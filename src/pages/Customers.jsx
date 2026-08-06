@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../api/client'
 import { t } from '../i18n'
 
@@ -47,7 +48,9 @@ export default function Customers() {
                 const v = verified(c)
                 return (
                   <tr key={c.id} className={`hover:bg-surface-container transition-colors ${c.is_blocked ? 'opacity-50' : ''}`}>
-                    <td className="py-4 px-6 font-body-md text-body-md text-primary font-medium">{c.first_name} {c.last_name}</td>
+                    <td className="py-4 px-6 font-body-md text-body-md text-primary font-medium">
+                      <Link to={`/customers/${c.id}`} className="hover:text-secondary transition-colors">{c.first_name} {c.last_name}</Link>
+                    </td>
                     <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">{c.email || '—'}</td>
                     <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">{c.phone || '—'}</td>
                     <td className="py-4 px-6">

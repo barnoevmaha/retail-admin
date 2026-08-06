@@ -9,6 +9,7 @@ import Sizes from '../pages/SizeList'
 import Orders from '../pages/Orders'
 import OrderDetail from '../pages/OrderDetail'
 import Customers from '../pages/Customers'
+import CustomerDetail from '../pages/CustomerDetail'
 import Suppliers from '../pages/Suppliers'
 import Warehouse from '../pages/Warehouse'
 import ReceivingPage from '../pages/ReceivingPage'
@@ -172,6 +173,7 @@ export default function Layout() {
             <Route path="orders" element={<Orders />} />
             <Route path="orders/:id" element={<OrderDetail />} />
             <Route path="customers" element={<Customers />} />
+            <Route path="customers/:id" element={<CustomerDetail />} />
             <Route path="warehouse" element={<Warehouse />} />
             <Route path="suppliers" element={<Suppliers />} />
             <Route path="receiving" element={<ReceivingPage />} />

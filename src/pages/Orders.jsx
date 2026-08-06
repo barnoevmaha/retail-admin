@@ -99,7 +99,13 @@ export default function Orders() {
                 <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">
                   {new Date(o.created_at).toLocaleDateString()}
                 </td>
-                <td className="py-5 px-4 text-on-surface font-body-md text-body-md">{o.customer_name || t('orders.walk_in')}</td>
+                <td className="py-5 px-4 text-on-surface font-body-md text-body-md">
+                  {o.customer_id ? (
+                    <Link to={`/customers/${o.customer_id}`} className="text-primary hover:text-secondary transition-colors">{o.customer_name || t('orders.walk_in')}</Link>
+                  ) : (
+                    o.customer_name || t('orders.walk_in')
+                  )}
+                </td>
                 <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">{o.items_count ?? '—'}</td>
                 <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">{o.payment_method || '—'}</td>
                 <td className="py-5 px-4">
