@@ -12,16 +12,22 @@ export default function Categories() {
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugDirty, setSlugDirty] = useState(false)
+  const [sizeSystem, setSizeSystem] = useState('')
+  const [sizeSystems, setSizeSystems] = useState([])
 
-  useEffect(() => { api.get('/categories/').then((r) => setCats(r.data)).catch(() => {}) }, [])
+  useEffect(() => {
+    api.get('/categories/').then((r) => setCats(r.data)).catch(() => {})
+    api.get('/categories/size-systems').then((r) => setSizeSystems(r.data)).catch(() => {})
+  }, [])
 
   const refresh = () => api.get('/categories/').then((r) => setCats(r.data))
 
   const save = async () => {
     if (!name) return
-    if (editing) await api.put(`/categories/${editing}`, { name, slug })
-    else await api.post('/categories/', { name, slug })
-    setName(''); setSlug(''); setSlugDirty(false); setEditing(null); setFormOpen(false)
+    const payload = { name, slug, size_system: sizeSystem || null }
+    if (editing) await api.put(`/categories/${editing}`, payload)
+    else await api.post('/categories/', payload)
+    setName(''); setSlug(''); setSlugDirty(false); setSizeSystem(''); setEditing(null); setFormOpen(false)
     refresh()
   }
 
@@ -29,6 +35,7 @@ export default function Categories() {
     setEditing(c.id)
     setName(c.name)
     setSlug(c.slug || '')
+    setSizeSystem(c.size_system || '')
     setSlugDirty(true)
     setFormOpen(true)
   }
@@ -59,7 +66,7 @@ export default function Categories() {
       </div>
 
       {formOpen && (
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] items-end gap-6 border border-outline-variant rounded-[4px] bg-surface-container-low p-6">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] items-end gap-6 border border-outline-variant rounded-[4px] bg-surface-container-low p-6">
           <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
             {t('categories.name')}
             <input
@@ -83,6 +90,19 @@ export default function Categories() {
             />
             <span className="mt-1 block font-body-sm text-body-sm text-on-surface-variant normal-case tracking-normal">{t('common.used_in_urls')}</span>
           </label>
+          <label className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+            {t('categories.size_system')}
+            <select
+              className={inputClass + ' mt-2 cursor-pointer'}
+              value={sizeSystem}
+              onChange={(e) => setSizeSystem(e.target.value)}
+            >
+              <option value="">{t('categories.size_system_none')}</option>
+              {sizeSystems.map((s) => (
+                <option key={s.key} value={s.key}>{s.sizes.join(', ')}</option>
+              ))}
+            </select>
+          </label>
           <button
             onClick={save}
             className="px-6 py-2 border border-outline-variant rounded-[4px] font-label-sm text-label-sm text-on-surface hover:border-secondary hover:text-secondary transition-colors duration-300"
@@ -100,6 +120,7 @@ export default function Categories() {
               <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-24">{t('categories.image')}</th>
               <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('categories.name')}</th>
               <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('categories.slug')}</th>
+              <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t('categories.sizes')}</th>
               <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">{t('common.products')}</th>
               <th className="py-4 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right w-28">{t('common.actions')}</th>
             </tr>
@@ -121,6 +142,9 @@ export default function Categories() {
                 </td>
                 <td className="py-4 px-6 font-body-lg text-body-lg text-primary">{c.name}</td>
                 <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">/{c.slug}</td>
+                <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant">
+                  {c.size_system ? sizeSystems.find((s) => s.key === c.size_system)?.sizes.join(', ') || c.size_system : '—'}
+                </td>
                 <td className="py-4 px-6 font-body-md text-body-md text-on-surface-variant text-right">{c.products_count ?? '-'}</td>
                 <td className="py-4 px-6">
                   <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">

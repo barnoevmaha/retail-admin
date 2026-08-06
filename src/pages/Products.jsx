@@ -107,9 +107,9 @@ export default function Products() {
   const [form, setForm] = useState({ name: '', description: '', category_id: '', brand_id: '', purchase_price: '', selling_price: '' })
   const [files, setFiles] = useState([])
   const [categories, setCategories] = useState([])
+  const [sizeSystems, setSizeSystems] = useState([])
   const [brands, setBrands] = useState([])
   const [sizes, setSizes] = useState([])
-  const [colors, setColors] = useState([])
   const [pickSizes, setPickSizes] = useState([])
   const [pickColors, setPickColors] = useState([])
   const [saveMsg, setSaveMsg] = useState('')
@@ -147,10 +147,52 @@ export default function Products() {
 
   useEffect(() => {
     api.get('/categories/').then((r) => setCategories(r.data)).catch(() => {})
+    api.get('/categories/size-systems').then((r) => setSizeSystems(r.data)).catch(() => {})
     api.get('/brands/').then((r) => setBrands(r.data)).catch(() => {})
     api.get('/sizes/').then((r) => setSizes(r.data)).catch(() => {})
     api.get('/colors/').then((r) => setColors(r.data)).catch(() => {})
   }, [])
+
+  const systemForCat = (catId) => {
+    const cat = categories.find((c) => String(c.id) === String(catId))
+    if (!cat?.size_system) return null
+    return sizeSystems.find((s) => s.key === cat.size_system) || null
+  }
+
+  const ensureSystemSizes = async (catId) => {
+    const sys = systemForCat(catId)
+    if (!sys) return
+    const existing = new Set(sizes.map((s) => s.name))
+    const missing = sys.sizes.filter((n) => !existing.has(n))
+    const created = []
+    for (const n of missing) {
+      try {
+        const { data } = await api.post('/sizes/', { name: n })
+        created.push(data)
+      } catch {}
+    }
+    if (created.length) setSizes((prev) => [...prev, ...created])
+    const all = [...sizes, ...created]
+    const names = new Set(sys.sizes)
+    const sysSizes = all.filter((s) => names.has(s.name))
+    if (sysSizes.length) setPickSizes(sysSizes.map((s) => ({ ...s, qty: '', inc: false })))
+  }
+
+  const systemSizes = (() => {
+    const sys = systemForCat(form.category_id)
+    if (!sys) return []
+    const names = new Set(sys.sizes)
+    const match = sizes.filter((s) => names.has(s.name))
+    return match.length ? match : []
+  })()
+
+  const systemSizesFor = (catId) => {
+    const sys = systemForCat(catId)
+    if (!sys) return null
+    const names = new Set(sys.sizes)
+    const match = sizes.filter((s) => names.has(s.name))
+    return match.length ? match : null
+  }
 
   const cycleSize = (s) => setPickSizes((prev) => {
     const pick = prev.find((x) => x.id === s.id)
@@ -465,7 +507,16 @@ export default function Products() {
             <div className={wizField}>
               {t('products.category')}
               <div className="mt-2 flex flex-wrap gap-2 items-center">
-                <Dropdown value={form.category_id} onChange={(v) => setForm({ ...form, category_id: v })}
+                <Dropdown value={form.category_id} onChange={(v) => {
+                  setForm({ ...form, category_id: v })
+                  const sys = systemForCat(v)
+                  if (sys) {
+                    const names = new Set(sys.sizes)
+                    const chosen = pickSizes.filter((s) => names.has(s.name))
+                    if (chosen.length) setPickSizes(chosen)
+                    else ensureSystemSizes(v)
+                  }
+                }}
                   options={[{ value: '', label: '—' }, ...categories.map((c) => ({ value: String(c.id), label: catName(c) }))]} />
                 {categories.length === 0 && <span className="font-body-md text-body-md text-on-surface-variant">{t('products.no_categories')}</span>}
                 <div className="flex gap-2">
@@ -495,8 +546,11 @@ export default function Products() {
         {wizStep === 1 && (
           <div>
             <span className={wizField + ' block mb-3'}>{t('products.pick_sizes')}</span>
+            {systemSizes.length > 0 && (
+              <p className="mb-3 font-body-sm text-body-sm text-secondary">{t('products.system_sizes_hint')}</p>
+            )}
             <div className="flex flex-wrap gap-2 items-center">
-              {sizes.map((s) => {
+              {(systemSizes.length ? systemSizes : sizes).map((s) => {
                 const pick = pickSizes.find((x) => x.id === s.id)
                 const showQty = pick && (pick.inc || includeQty)
                 return (
@@ -858,8 +912,8 @@ export default function Products() {
                           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-end">
                             <div className="sm:col-span-3 md:col-span-2">
                               <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">{t('products.variant_size')}</span>
-                              <div className="mt-1.5 flex flex-wrap gap-2">
-                                {sizes.map((s) => {
+<div className="mt-1.5 flex flex-wrap gap-2">
+                                {(systemSizesFor(p.category_id) || sizes).map((s) => {
                                   const pick = vf.sizes.find((x) => x.id === s.id)
                                   const on = !!pick
                                   const showQty = pick && (pick.inc || includeQtyPanel)
