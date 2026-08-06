@@ -275,6 +275,18 @@ export default function OrderDetail() {
               {(order.delivery || [customer.first_name + ' ' + customer.last_name, customer.address]).filter(Boolean).map((l, i) => (
                 <p key={i} className={i === 0 ? 'text-primary font-medium' : ''}>{l}</p>
               ))}
+              {order.latitude != null && order.longitude != null && (
+                <p className="pt-2">
+                  <a
+                    href={`https://www.openstreetmap.org/?mlat=${order.latitude}&mlon=${order.longitude}#map=17/${order.latitude}/${order.longitude}`}
+                    target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-primary hover:underline"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">map</span>
+                    View on map
+                  </a>
+                </p>
+              )}
             </div>
           </div>
 
