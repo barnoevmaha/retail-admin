@@ -173,10 +173,6 @@ export default function Products() {
       } catch {}
     }
     if (created.length) setSizes((prev) => [...prev, ...created])
-    const all = [...sizes, ...created]
-    const names = new Set(sys.sizes)
-    const sysSizes = all.filter((s) => names.has(s.name))
-    if (sysSizes.length) setPickSizes(sysSizes.map((s) => ({ ...s, qty: '', inc: false })))
   }
 
   const systemSizes = (() => {
@@ -513,8 +509,8 @@ export default function Products() {
                   if (sys) {
                     const names = new Set(sys.sizes)
                     const chosen = pickSizes.filter((s) => names.has(s.name))
-                    if (chosen.length) setPickSizes(chosen)
-                    else ensureSystemSizes(v)
+                    setPickSizes(chosen)
+                    if (!chosen.length) ensureSystemSizes(v)
                   }
                 }}
                   options={[{ value: '', label: '—' }, ...categories.map((c) => ({ value: String(c.id), label: catName(c) }))]} />
