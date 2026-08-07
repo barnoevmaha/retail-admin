@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api, { fileUrl } from '../api/client'
+import api, { fileUrl, openReceipt } from '../api/client'
 import { t } from '../i18n'
 
 const firstVariant = (p) => {
@@ -173,7 +173,7 @@ export default function POS() {
   const reprintReceipt = async (orderId) => {
     const id = orderId || lastOrderId
     if (!id) { setMsg(t('pos.no_receipt')); return }
-    window.open(`${api.defaults.baseURL}/receipts/${id}`, '_blank')
+    await openReceipt(`/receipts/${id}`)
   }
 
   const toggleSuspended = () => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api, { apiUrl } from '../api/client'
+import api, { openReceipt, downloadReceipt } from '../api/client'
 import { t } from '../i18n'
 
 export default function ReceiptsPage() {
@@ -9,8 +9,8 @@ export default function ReceiptsPage() {
     api.get('/receipts/history', { params: { limit: 100 } }).then((r) => setReceipts(r.data)).catch(() => {})
   }, [])
 
-  const printReceipt = (id) => window.open(apiUrl(`/receipts/${id}`), '_blank')
-  const downloadReceipt = (id) => window.open(apiUrl(`/receipts/${id}/download`), '_blank')
+  const printReceipt = (id) => openReceipt(`/receipts/${id}`)
+  const downloadReceiptCb = (id) => downloadReceipt(`/receipts/${id}/download`)
 
   return (
     <div className="flex flex-col gap-8">
@@ -52,7 +52,7 @@ export default function ReceiptsPage() {
                     <button onClick={() => printReceipt(r.id)} className="px-4 py-1.5 border border-outline-variant font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant hover:border-secondary hover:text-secondary transition-all duration-300 mr-2">
                       {t('receipts.view')}
                     </button>
-                    <button onClick={() => downloadReceipt(r.id)} className="px-4 py-1.5 border border-outline-variant font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant hover:border-secondary hover:text-secondary transition-all duration-300">
+                    <button onClick={() => downloadReceiptCb(r.id)} className="px-4 py-1.5 border border-outline-variant font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant hover:border-secondary hover:text-secondary transition-all duration-300">
                       {t('receipts.download')}
                     </button>
                   </td>

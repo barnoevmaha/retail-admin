@@ -37,3 +37,22 @@ api.interceptors.response.use(
 )
 
 export default api
+
+// receipts/downloads are staff-protected; window.open can't send the Bearer header,
+// so fetch with auth then open a blob
+export const openReceipt = async (path) => {
+  const { data } = await api.get(path, { responseType: 'blob' })
+  const url = URL.createObjectURL(new Blob([data], { type: 'text/html' }))
+  window.open(url, '_blank')
+}
+
+export const downloadReceipt = async (path) => {
+  const { data } = await api.get(path, { responseType: 'blob' })
+  const url = URL.createObjectURL(new Blob([data], { type: 'text/html' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'receipt.html'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+}
