@@ -3,39 +3,60 @@ import { Link, useParams } from 'react-router-dom'
 import api from '../api/client'
 import { t } from '../i18n'
 
-// ponytail: mock fallback until GET /orders/{id} exists on the backend — delete this block once live
-const MOCK = {
-  id: 92,
-  created_at: new Date().toISOString(),
-  status: 'confirmed',
-  payment_method: 'card',
-  total_amount: 1119,
-  customer: { first_name: 'Elias', last_name: 'Thorne', email: 'elias@thorne.com', phone: '+44 20 7946 0123', address: '12 Savile Row, London' },
-  items: [{ name: 'Merino Wool Overcoat', sku: 'MWO-48-CH', qty: 1, price: 895 }],
-  shipping: 45,
-  tax: 179,
-  payment_label: 'Amex Platinum',
-  payment_status: 'AUTHORIZED',
-  delivery: ['Elias Thorne', '12 Savile Row', 'Mayfair, London W1S 3PQ', 'United Kingdom'],
-  notes: 'Signature required on delivery. Client requested double-boxed protective shipping for high-value garment.',
-}
-
 const STATUSES = ['pending', 'confirmed', 'packing', 'ready', 'delivered', 'cancelled']
 const NEXT = { pending: 'confirmed', confirmed: 'packing', packing: 'ready', ready: 'delivered' }
+
+const errorMessage = (err) => {
+  const status = err?.response?.status
+  if (status === 404) return 'Order not found.'
+  if (status === 403) return 'You do not have permission to view this order.'
+  if (status === 401) return 'Your session has expired. Please sign in again.'
+  if (status && status >= 500) return 'The server could not load this order. Please try again later.'
+  const detail = err?.response?.data?.detail
+  if (detail) return typeof detail === 'string' ? detail : 'Could not load this order.'
+  return 'Network error. Check your connection and try again.'
+}
 
 export default function OrderDetail() {
   const { id } = useParams()
   const [order, setOrder] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const load = () => {
-    api.get(`/orders/${id}`).then((r) => setOrder(r.data)).catch(() => setOrder({ ...MOCK, id: Number(id) }))
-  }
-  useEffect(load, [id])
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError('')
+    api.get(`/orders/${id}`).then((r) => {
+      if (!cancelled) setOrder(r.data)
+    }).catch((err) => {
+      if (!cancelled) setError(errorMessage(err))
+    }).finally(() => {
+      if (!cancelled) setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [id])
 
-  if (!order) {
+  if (loading) {
     return <div className="py-24 text-center font-body-md text-body-md text-on-surface-variant">Loading order...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="py-24 flex flex-col items-center gap-6 text-center">
+        <span className="material-symbols-outlined text-5xl text-on-surface-variant">error_outline</span>
+        <p className="font-body-md text-body-md text-on-surface">Error loading order #{id}</p>
+        <p className="font-body-md text-body-md text-error">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-2.5 font-label-sm text-label-sm bg-secondary text-on-secondary uppercase tracking-widest hover:opacity-90 transition-all"
+        >
+          Retry
+        </button>
+      </div>
+    )
   }
 
   const customer = order.customer || { first_name: order.customer_name || 'Walk-in', last_name: '', email: '', phone: '', address: '' }
