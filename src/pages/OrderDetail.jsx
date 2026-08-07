@@ -48,7 +48,8 @@ export default function OrderDetail() {
   const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0)
   const shipping = order.shipping ?? 0
   const tax = order.tax ?? 0
-  const total = order.total_amount ?? subtotal + shipping + tax
+  const discount = order.discount ?? 0
+  const total = order.total_amount ?? subtotal + shipping + tax - discount
   const statusIdx = STATUSES.indexOf(order.status)
 
   const updateStatus = async (status) => {
@@ -238,6 +239,12 @@ export default function OrderDetail() {
                 <span className="text-on-surface-variant">Shipping</span>
                 <span className="text-on-surface">${shipping.toFixed(2)}</span>
               </div>
+              {discount > 0 && (
+                <div className="flex justify-between font-body-md text-body-md">
+                  <span className="text-on-surface-variant">Discount{order.promo_code ? ` (${order.promo_code})` : ''}</span>
+                  <span className="text-on-surface">-${discount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-body-md text-body-md pb-6 border-b border-outline-variant/30">
                 <span className="text-on-surface-variant">Tax</span>
                 <span className="text-on-surface">${tax.toFixed(2)}</span>
