@@ -7,8 +7,6 @@ const statusBadge = (status) => {
   if (status === 'delivered' || status === 'ready')
     return 'bg-secondary-container text-on-secondary-container'
   if (status === 'cancelled') return 'bg-error-container text-on-error-container'
-  if (status === 'paid' || status === 'confirmed')
-    return 'bg-surface-container-highest text-on-surface-variant'
   return 'bg-surface-container-highest text-on-surface-variant'
 }
 
