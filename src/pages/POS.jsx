@@ -410,13 +410,16 @@ export default function POS() {
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            {['cash', 'card', 'bank_transfer'].map((m) => (
+            {['cash', 'manual', 'bank_transfer'].map((m) => (
               <label key={m} className={`flex-1 text-center px-2 py-2 border font-label-sm text-label-sm uppercase tracking-widest cursor-pointer transition-colors ${paymentMethod === m ? 'border-secondary text-secondary' : 'border-outline-variant text-on-surface-variant hover:border-secondary'}`}>
                 <input type="radio" name="payment" value={m} checked={paymentMethod === m} onChange={(e) => setPaymentMethod(e.target.value)} className="hidden" />
                 {t('pos.payment_' + m)}
               </label>
             ))}
           </div>
+          <p className="text-[11px] text-on-surface-variant text-center -mt-2">
+            {t('pos.manual_payment_note')}
+          </p>
 
           <div className="space-y-2">
             <div className="flex justify-between text-on-surface-variant font-body-md text-body-md">

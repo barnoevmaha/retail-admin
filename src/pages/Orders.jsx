@@ -12,6 +12,16 @@ const statusBadge = (status) => {
   return 'bg-surface-container-highest text-on-surface-variant'
 }
 
+const paymentMethodLabel = (method, t) => {
+  const labels = {
+    cash: t('pos.payment_cash'),
+    manual: t('pos.payment_manual'),
+    card: t('pos.payment_card'),
+    bank_transfer: t('pos.payment_bank_transfer'),
+  }
+  return labels[method] || method || '—'
+}
+
 export default function Orders() {
   const [orders, setOrders] = useState([])
   const [filter, setFilter] = useState('all')
@@ -107,7 +117,14 @@ export default function Orders() {
                   )}
                 </td>
                 <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">{o.items_count ?? '—'}</td>
-                <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">{o.payment_method || '—'}</td>
+                <td className="py-5 px-4 text-on-surface-variant font-body-md text-body-md">
+                  {paymentMethodLabel(o.payment_method, t)}
+                  {['card', 'manual', 'bank_transfer'].includes(o.payment_method) && (
+                    <span className="ml-2 px-2 py-0.5 bg-warning/10 border border-warning/30 text-warning text-[10px] font-bold uppercase tracking-widest">
+                      {t('payment.pending')}
+                    </span>
+                  )}
+                </td>
                 <td className="py-5 px-4">
                   <div className="flex items-center gap-2">
                     <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-[2px] ${statusBadge(o.status)}`}>

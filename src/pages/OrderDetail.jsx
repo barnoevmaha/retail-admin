@@ -6,6 +6,16 @@ import { t } from '../i18n'
 const STATUSES = ['pending', 'confirmed', 'packing', 'ready', 'delivered', 'cancelled']
 const NEXT = { pending: 'confirmed', confirmed: 'packing', packing: 'ready', ready: 'delivered' }
 
+const paymentMethodLabel = (method, t) => {
+  const labels = {
+    cash: t('pos.payment_cash'),
+    manual: t('pos.payment_manual'),
+    card: t('pos.payment_card'),
+    bank_transfer: t('pos.payment_bank_transfer'),
+  }
+  return labels[method] || method || '—'
+}
+
 const errorMessage = (err) => {
   const status = err?.response?.status
   if (status === 404) return 'Order not found.'
@@ -281,12 +291,16 @@ export default function OrderDetail() {
                   <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-2">{t('order.payment_method')}</p>
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-secondary">credit_card</span>
-                    <span className="font-medium text-on-surface">{order.payment_label || order.payment_method || '—'}</span>
+                    <span className="font-medium text-on-surface">{paymentMethodLabel(order.payment_method, t)}</span>
                   </div>
                 </div>
                 {order.payment_status && (
-                  <span className="px-3 py-1 bg-secondary-container/10 border border-secondary-container/30 text-on-secondary-container text-[10px] font-bold uppercase tracking-widest">
-                    {order.payment_status}
+                  <span className={`px-3 py-1 border text-[10px] font-bold uppercase tracking-widest ${
+                    order.payment_status === 'pending'
+                      ? 'bg-warning/10 border-warning/30 text-warning'
+                      : 'bg-secondary-container/10 border-secondary-container/30 text-on-secondary-container'
+                  }`}>
+                    {t('payment.' + order.payment_status)}
                   </span>
                 )}
               </div>
